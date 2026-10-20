@@ -1,22 +1,23 @@
 ---
 name: registrar-sesion
-description: Cierra una sesión de trabajo del proyecto de precios de vivienda en Bogotá — escribe la bitácora en 06_Bitacoras/ con el formato exigido por CLAUDE.md y actualiza HANDOFF.md con el estado actual y el siguiente objetivo. Usar cuando el usuario pida "cerrar sesión", "registrar la sesión", "escribir la bitácora" o "actualizar el handoff".
+description: Cierra una sesión de trabajo del proyecto de precios de vivienda en Bogotá — escribe la bitácora en 06_Bitacoras/ con el formato exigido por CLAUDE.md, actualiza HANDOFF.md con el estado actual y el siguiente objetivo, y actualiza README.md si la sesión cambió algo que este documenta. Usar cuando el usuario pida "cerrar sesión", "registrar la sesión", "escribir la bitácora" o "actualizar el handoff".
 ---
 
 # Registrar sesión de trabajo
 
-Al terminar una sesión de trabajo en este proyecto, hace dos cosas en este
+Al terminar una sesión de trabajo en este proyecto, hace tres cosas en este
 orden:
 
 1. Escribir la bitácora de la sesión en `06_Bitacoras/`.
 2. Actualizar `HANDOFF.md` (raíz del repo) a partir de esa bitácora.
+3. Revisar `README.md` (raíz del repo) y actualizarlo solo si es necesario.
 
 Básate solo en lo que ocurrió en la conversación. Confirma los archivos
 afectados con `git status` / `git diff --stat` (y `git log` si hubo commits).
 Si algo no es inferible con certeza (quién de los integrantes trabajó en la
 sesión, un supuesto, un resultado ambiguo, cuál debe ser el siguiente
-objetivo), pregunta al usuario en vez de adivinar. Si el usuario pide solo una
-de las dos partes, haz solo esa.
+objetivo), pregunta al usuario en vez de adivinar. Si el usuario pide solo
+algunas de las partes, haz solo esas.
 
 ## Paso 1: bitácora
 
@@ -92,10 +93,50 @@ Sigue las reglas de la sección "`HANDOFF.md`" de `CLAUDE.md`:
   terminó, anota qué avanzó y qué lo impidió. No edites las entradas
   anteriores.
 
+## Paso 3: revisar `README.md`
+
+El README es la carta de presentación del repo para quien llega por primera
+vez (profesor, evaluadores, equipo). A diferencia de `HANDOFF.md`, no es un
+registro de avance: describe el proyecto tal como está. Solo se toca si la
+sesión cambió algo que él documenta. Si nada cambió, no lo edites y dilo en el
+cierre ("README sin cambios").
+
+Revisa estos puntos contra lo ocurrido en la sesión y contra el contenido del
+repo (`git status`, `ls`):
+
+| Sección del README | Actualizar si la sesión... |
+| --- | --- |
+| Enfoque (línea base, modelo, métricas, validación) | cambió o fijó una decisión metodológica (modelos, métricas, tipo de partición, semilla) |
+| Datos | agregó, quitó o transformó fuentes de datos, o descubrió una advertencia nueva sobre la base |
+| Estructura del repositorio | creó, renombró o eliminó carpetas o archivos de la raíz, o `00_main.py` pasó a existir |
+| Cómo reproducir | creó scripts, `00_main.py`, `requirements.txt` o cambió el entorno o el orden de ejecución |
+| IA responsable | produjo hallazgos o decisiones sobre sesgos y su mitigación |
+| Integrantes | cambió el equipo |
+
+Reglas:
+
+- Ediciones mínimas y puntuales: cambia solo las líneas afectadas, no
+  reescribas el documento. Conserva el tono, el orden de secciones y el idioma
+  (español).
+- Quita los marcadores "pendiente" de lo que ya existe y funciona. No describas
+  como existente algo que no está en el repo: verifícalo antes de escribirlo.
+- Cuando el pipeline exista, la sección "Cómo reproducir" lista los comandos
+  reales y los scripts en orden. No incluyas cifras de resultados escritas a
+  mano. Si se muestra una métrica, debe salir de una corrida y apuntar a la
+  tabla o figura de `03_Resultados/` que la contiene.
+- Sin juicios de "bueno" o "malo" ni entusiasmo por métricas o modelos
+  (`CLAUDE.md`, "Primero el diseño, después los resultados").
+- No dupliques lo que ya está en `HANDOFF.md` (siguiente objetivo, historial de
+  sesiones) ni en las bitácoras; enlázalos.
+- Si el cambio al README no es obvio (por ejemplo, cambia el enfoque
+  metodológico), muéstraselo al usuario antes de escribirlo.
+- Anota en la bitácora (sección "Archivos") que se modificó `README.md`.
+
 ## Versionado
 
-Haz commit de la bitácora y de `HANDOFF.md` (junto con los scripts y
-resultados de la sesión, si el usuario no los ha versionado aún) y súbelos al
+Haz commit de la bitácora, de `HANDOFF.md` y de `README.md` si cambió (junto con
+los scripts y resultados de la sesión, si el usuario no los ha versionado aún) y
+súbelos al
 repositorio de GitHub asociado, salvo que el usuario indique lo contrario.
 
 - Los datos de `01_Datos/` se versionan. Si un archivo nuevo supera los
@@ -106,4 +147,5 @@ repositorio de GitHub asociado, salvo que el usuario indique lo contrario.
 ## Cierre
 
 Termina con un reporte corto: ruta de la bitácora, el siguiente objetivo que
-quedó en `HANDOFF.md` y si hubo commit/push.
+quedó en `HANDOFF.md`, si `README.md` se actualizó (y qué secciones) o quedó sin
+cambios, y si hubo commit/push.

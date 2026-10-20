@@ -152,7 +152,8 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
   de archivos creados, modificados o eliminados.
 - La skill de proyecto `registrar-sesion`
   (`.claude/skills/registrar-sesion/SKILL.md`, versionada para todo el equipo)
-  escribe la bitácora y actualiza `HANDOFF.md`. Úsela al cerrar ("cerrar
+  escribe la bitácora, actualiza `HANDOFF.md` y revisa `README.md` (lo edita
+  solo si la sesión cambió algo que este documenta). Úsela al cerrar ("cerrar
   sesión", "registrar la sesión", "escribir la bitácora").
 - Lea las bitácoras previas al iniciar una sesión para retomar lo pendiente.
 
