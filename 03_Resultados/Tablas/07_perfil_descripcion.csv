@@ -1,0 +1,13 @@
+medida,valor,unidad
+viviendas,27324.0,n
+con descripción no vacía,27324.0,n
+"palabras, mediana",75.0,palabras
+"palabras, percentil 10",34.0,palabras
+"palabras, percentil 90",134.0,palabras
+menciona vista (sin columna),44.1,%
+menciona remodelado (sin columna),14.8,%
+menciona iluminación (sin columna),13.6,%
+menciona balcón (sin columna),30.3,%
+"menciona cercanía (colegio, TransMilenio o centro comercial) (sin columna)",21.2,%
+menciona terraza (ya hay columna),32.0,%
+menciona ascensor (ya hay columna),27.8,%
