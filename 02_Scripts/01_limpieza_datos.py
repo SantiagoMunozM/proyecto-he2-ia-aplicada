@@ -14,14 +14,16 @@ Salidas:
     03_Resultados/Tablas/01_perdida_por_localidad_estrato.csv
     03_Resultados/Tablas/01_estadisticas_numericas.csv
     03_Resultados/Tablas/01_anomalias.csv
+    03_Resultados/Tablas/01_duplicados_eliminados.csv
 
 Pasos:
     1. Lee el JSON y normaliza el formato MongoDB Extended JSON.
     2. Reconocimiento: tipos crudos frente al README, faltantes, estadísticas.
     3. Alcance (ventas), eliminación de columnas excluidas o casi vacías,
        sector/barrio en N/A -> SIN_DATO, eliminación de filas con N/A en el
-       resto, parqueaderos negativos -> 0 y filtros de validez (area > 0,
-       estrato entre 1 y 6, banos >= 1, precio por m2 en rango plausible).
+       resto, parqueaderos negativos -> 0, filtros de validez (area > 0,
+       estrato entre 1 y 6, banos >= 1, precio por m2 en rango plausible) y
+       eliminación de anuncios repetidos (filas idénticas salvo codigo y fechas).
     4. Convierte cada columna al tipo que describe el README y lo verifica.
     5. Guarda la base limpia. Los crudos nunca se modifican.
 
@@ -84,6 +86,12 @@ BANOS_MINIMO = 1
 # plausibilidad, no según el desempeño de ningún modelo.
 PRECIO_M2_MINIMO = 1_000_000
 PRECIO_M2_MAXIMO = 40_000_000
+
+# Anuncios repetidos: el mismo anuncio publicado de nuevo (casi siempre por la misma
+# inmobiliaria, con otro codigo) es idéntico en todas las columnas salvo estas. Se conserva
+# la publicación más reciente. No se eliminan filas que difieran en cualquier otra columna
+# (descripción, baños, amenidades...), porque pueden ser unidades distintas de un mismo edificio.
+COLUMNAS_IGNORADAS_DUPLICADOS = ["codigo", "datetime", "last_view"]
 
 # Límites aproximados de Bogotá, solo para marcar coordenadas atípicas.
 LAT_BOGOTA = (4.45, 4.85)
@@ -365,7 +373,26 @@ antes = len(limpio)
 precio_m2 = limpio["precio_venta"] / limpio["area"]
 limpio = limpio[precio_m2.between(PRECIO_M2_MINIMO, PRECIO_M2_MAXIMO)]
 registrar(f"Filtro: {PRECIO_M2_MINIMO:,} <= precio/m2 <= {PRECIO_M2_MAXIMO:,}", antes, len(limpio))
-registrar("Total tras alcance, N/A y filtros", n_total, len(limpio))
+
+# 3g. Anuncios repetidos: filas idénticas en todo salvo codigo y fechas -> se conserva la más reciente
+print("\nAnuncios repetidos:")
+clave_duplicados = [c for c in limpio.columns if c not in COLUMNAS_IGNORADAS_DUPLICADOS]
+antes = len(limpio)
+limpio = limpio.sort_values(["datetime", "codigo"], ascending=[False, True])
+repetida = limpio.duplicated(clave_duplicados, keep="first")
+# Para cada fila eliminada se anota el codigo que se conservó en su lugar
+conservado = limpio.groupby(clave_duplicados, dropna=False)["codigo"].transform("first")
+duplicados = pd.DataFrame({
+    "codigo_eliminado": limpio.loc[repetida, "codigo"],
+    "codigo_conservado": conservado[repetida],
+    "datetime_eliminado": limpio.loc[repetida, "datetime"],
+}).sort_values(["codigo_conservado", "codigo_eliminado"])
+limpio = limpio[~repetida].sort_index()
+print(f"  Clave: todas las columnas salvo {COLUMNAS_IGNORADAS_DUPLICADOS}")
+print(f"  Grupos con repetidos: {duplicados['codigo_conservado'].nunique():,}")
+registrar("Anuncios repetidos (idénticos salvo codigo y fechas; se conserva el más reciente)",
+          antes, len(limpio))
+registrar("Total tras alcance, N/A, filtros y repetidos", n_total, len(limpio))
 
 # ---------------------------------------------------------------------------
 # 4. Tipos finales y verificación
@@ -478,3 +505,4 @@ guardar_tabla(pd.DataFrame(embudo), "01_perdida_observaciones.csv")
 guardar_tabla(perdida, "01_perdida_por_localidad_estrato.csv")
 guardar_tabla(estadisticas.reset_index(drop=True), "01_estadisticas_numericas.csv")
 guardar_tabla(anomalias, "01_anomalias.csv")
+guardar_tabla(duplicados, "01_duplicados_eliminados.csv")

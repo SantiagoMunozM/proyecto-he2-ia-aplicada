@@ -12,6 +12,7 @@ Insumos:
     03_Resultados/Tablas/04_importancia_variables.csv
     03_Resultados/Tablas/05_errores_por_estrato.csv
     03_Resultados/Tablas/05_comparacion_por_localidad.csv
+    03_Resultados/Tablas/05_sensibilidad_gemelos.csv
 
 Salidas (03_Resultados/Figuras/):
     06_tabla_metricas.png
@@ -22,6 +23,7 @@ Salidas (03_Resultados/Figuras/):
     06_mape_estrato.png
     06_sesgo_estrato.png
     06_sesgo_localidad.png
+    06_sensibilidad_gemelos.png
 
 Se corre desde la raíz del repo: python 02_Scripts/06_figuras_presentacion.py
 """
@@ -92,6 +94,7 @@ metricas = pd.read_csv(TABLAS / "04_metricas_modelos.csv")
 importancia = pd.read_csv(TABLAS / "04_importancia_variables.csv")
 estratos = pd.read_csv(TABLAS / "05_errores_por_estrato.csv")
 localidades = pd.read_csv(TABLAS / "05_comparacion_por_localidad.csv")
+gemelos = pd.read_csv(TABLAS / "05_sensibilidad_gemelos.csv")
 
 estratos = estratos[estratos["estrato"].astype(str).str.isdigit()].copy()
 estratos["estrato"] = estratos["estrato"].astype(int)
@@ -262,6 +265,28 @@ for ax, escala in zip(axes, ESCALAS):
 axes[0].legend(loc="lower right", fontsize=13)
 fig.tight_layout()
 guardar(fig, "06_sesgo_localidad.png")
+
+# ---------------------------------------------------------------------------
+# 9. Sensibilidad a gemelos: MAPE de prueba en viviendas con y sin gemelo en entrenamiento
+# ---------------------------------------------------------------------------
+N_GEMELOS = gemelos.drop_duplicates("subconjunto").set_index("subconjunto")["n_prueba"]
+fig, axes = plt.subplots(1, 2, figsize=(14, 6.2), sharey=True)
+x = np.arange(len(MODELOS))
+for ax, escala in zip(axes, ESCALAS):
+    sub = gemelos[gemelos["escala"] == escala].set_index(["subconjunto", "modelo"])["mape"]
+    for k, (subconjunto, color, etiqueta) in enumerate([
+            ("sin_gemelo", AZUL, f"Sin gemelo (n={N_GEMELOS['sin_gemelo']:,})"),
+            ("con_gemelo", NARANJA, f"Con gemelo en entrenamiento (n={N_GEMELOS['con_gemelo']:,})")]):
+        valores = sub.loc[subconjunto].loc[MODELOS].to_numpy()
+        barras = ax.bar(x + (k - 0.5) * 0.38, valores, width=0.36, color=color, label=etiqueta)
+        ax.bar_label(barras, fmt="%.1f", fontsize=11, color=TINTA, padding=2)
+    ax.set_xticks(x, [NOMBRES[m].replace(" (", "\n(") for m in MODELOS], fontsize=12)
+    ax.set_title(TITULO_ESCALA[escala], loc="left", fontsize=16, color=TINTA)
+    estilo_ejes(ax, "y")
+axes[0].set_ylabel("MAPE en prueba (%)")
+axes[0].legend(loc="upper right", fontsize=12)
+fig.tight_layout()
+guardar(fig, "06_sensibilidad_gemelos.png")
 
 print(f"Figuras escritas en {FIGURAS.relative_to(RAIZ)}:")
 for ruta in sorted(FIGURAS.glob("06_*.png")):

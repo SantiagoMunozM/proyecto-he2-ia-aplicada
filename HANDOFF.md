@@ -24,10 +24,15 @@ brechas ordenada por peso en la nota. Lo que ya se sabe: no hay nada hecho para 
 propuesta de aprendizaje profundo o IA generativa (peso 0.20), cuyo candidato es un
 modelo de texto con `descripcion`. Se espera además dividir las brechas entre los
 tres integrantes (criterio de trabajo en equipo) y decidir cuáles entran antes de
-la presentación.
+la presentación. La presentación en Canva ("Presentación Avance IA Aplicada") ya
+tiene las cifras de la corrida del 2026-10-21 y una diapositiva sobre los anuncios
+repetidos (diagnóstico de obstáculos).
 
 **Bloqueos / preguntas abiertas:**
 
+- Confirmar con el equipo la eliminación de anuncios repetidos (424 filas): cambió
+  la base limpia y la partición, así que todo resultado anterior al 2026-10-21 es de
+  otra partición.
 - Confirmar con el equipo el uso de `cross_validate` y `GridSearchCV` (registrado
   en `CLAUDE.md` como pedido por Santiago Muñoz).
 - Confirmar con el equipo el umbral de 30 viviendas en prueba para interpretar un
@@ -49,32 +54,40 @@ la presentación.
   registros), `README_columnas.md` y `external/`.
 - `02_Scripts/01_limpieza_datos.py`: lee el JSON, normaliza el Extended JSON,
   aplica el alcance (ventas), las exclusiones y los filtros de validez, y guarda
-  `01_Datos/02_Limpios/apartamentos_venta_limpio.csv` (27,324 viviendas × 36
-  columnas, sin N/A). Tablas `03_Resultados/Tablas/01_*.csv`.
+  `01_Datos/02_Limpios/apartamentos_venta_limpio.csv` (26,900 viviendas × 36
+  columnas, sin N/A). Elimina los anuncios repetidos (idénticos salvo `codigo` y
+  fechas; 424 filas, lista en `01_duplicados_eliminados.csv`). Tablas
+  `03_Resultados/Tablas/01_*.csv`.
 - `02_Scripts/02_analisis_descriptivo.py`: describe la base limpia sin filtrarla.
   Tablas `02_*.csv` y figuras `02_*.png`.
 - `02_Scripts/03_particion_muestra.py`: partición 80/20 estratificada por estrato
   (`random_state=2026`), guardada en `01_Datos/02_Limpios/particion_train_test.csv`
-  (21,859 en entrenamiento, 5,465 en prueba); tabla `03_composicion_particion.csv`.
+  (21,520 en entrenamiento, 5,380 en prueba); tabla `03_composicion_particion.csv`.
 - `02_Scripts/04_estimacion_modelos.py`: línea base lineal, lineal completo,
   Lasso, Random Forest y XGBoost, cada uno con el objetivo en log y en niveles,
   con hiperparámetros por CV de 5 folds sobre entrenamiento (`cross_validate` en
   todos los modelos; `GridSearchCV` para Random Forest y XGBoost con el objetivo en
   niveles, y recorrido explícito de la grilla en log). Grilla del Random Forest:
   `max_features` en 7 valores y `min_samples_leaf` en [1, 2, 3, 5]; la CV elige
-  `min_samples_leaf=1` (el mínimo permitido) en las dos escalas. Reporta RMSE y
+  `min_samples_leaf=1` (el mínimo permitido) en las dos escalas y `max_features`
+  0.5 (log) y 0.33 (niveles). Reporta RMSE y
   MAPE en entrenamiento, CV y prueba, la diferencia entre prueba y CV (sin umbral),
   el cambio frente a la línea base, coeficientes, importancia de variables y
   errores por estrato y localidad. Tablas y figuras `04_*` en `03_Resultados/`.
-  Tarda unos 14 min (el pipeline completo, con la grilla actual).
+  Tarda unos 23 min (corrida del 2026-10-21; antes tardó 14).
 - `00_main.py` corre en orden todos los scripts numerados de `02_Scripts/`; la
-  corrida completa de 01 a 05 está verificada (2026-10-21, sin errores).
+  corrida completa de 01 a 07 está verificada (2026-10-21, sin errores).
 - `requirements.txt` fija el entorno (Python 3.13, `.venv/` local no versionado).
 - `02_Scripts/05_analisis_errores_impacto.py`: lee las predicciones de prueba de
   04 y compara la línea base con el Random Forest por estrato y localidad (RMSE,
   MAE, sesgo, proporción sobre/subvalorada, grupos de menos de 30 viviendas
   marcados), calcula el costo esperado por vivienda para comprador y vendedor y
-  dimensiona la prueba A/B del error de precio. Tablas y figuras `05_*`.
+  dimensiona la prueba A/B del error de precio. Incluye la sensibilidad a gemelos:
+  métricas de prueba con y sin las 241 viviendas que tienen un gemelo en
+  entrenamiento (`05_sensibilidad_gemelos.csv`). Tablas y figuras `05_*`.
+- `02_Scripts/06_figuras_presentacion.py` (figuras `06_*` con la paleta de las
+  diapositivas) y `02_Scripts/07_perfil_descripcion.py` (perfil del texto de
+  `descripcion`, tablas `07_*`).
 - Sin modelo de texto y sin evaluación de impacto con datos reales (tiempo de
   compra/venta y ahorro quedan como propuesta).
 
@@ -82,6 +95,17 @@ la presentación.
 
 <!-- Una entrada por sesión, la más reciente arriba. Tres a cinco líneas:
      qué se hizo y enlace a la bitácora. -->
+
+### 2026-10-21: base de 2023 y eliminación de anuncios repetidos
+
+- Santiago Muñoz (inferido del usuario de git). Se revisó la base de 2023 de la fuente y
+  se descartó (35.4% de las ventas de 2024 reaparecen, faltan variables, 158 MB).
+- Se eliminaron 424 anuncios repetidos (idénticos salvo `codigo` y fechas) en
+  `01_limpieza_datos.py`: la base queda en 26,900 y la partición se reasignó. Se agregó
+  la sensibilidad a gemelos en 05 y su figura en 06; `00_main.py` corrió completo (23 min).
+- Se actualizó la presentación de Canva con las cifras nuevas y una diapositiva del
+  obstáculo. El objetivo anterior (revisión contra la rúbrica) no se trabajó y se mantiene.
+- Bitácora: [2026-10-21_anuncios-repetidos-datos-2023.md](06_Bitacoras/2026-10-21_anuncios-repetidos-datos-2023.md)
 
 ### 2026-10-21: `cross_validate`, `GridSearchCV` y grilla del Random Forest
 

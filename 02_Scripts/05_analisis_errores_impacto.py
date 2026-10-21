@@ -9,6 +9,8 @@ guardó 04_estimacion_modelos.py.
 
 Insumos:
     03_Resultados/Tablas/04_predicciones_prueba.csv   (lo produce 04_estimacion_modelos.py)
+    01_Datos/02_Limpios/apartamentos_venta_limpio.csv  (solo para la sensibilidad a gemelos)
+    01_Datos/02_Limpios/particion_train_test.csv
 
 Salidas:
     03_Resultados/Tablas/05_errores_por_estrato.csv
@@ -16,6 +18,7 @@ Salidas:
     03_Resultados/Tablas/05_costo_esperado_por_estrato.csv   (RF frente a línea base, con total)
     03_Resultados/Tablas/05_comparacion_por_localidad.csv
     03_Resultados/Tablas/05_diseno_ab.csv
+    03_Resultados/Tablas/05_sensibilidad_gemelos.csv
     03_Resultados/Figuras/05_costo_esperado_por_estrato.png
     03_Resultados/Figuras/05_sesgo_por_localidad.png
 
@@ -30,6 +33,10 @@ Pasos:
     4. Diseño de la prueba A/B (lineal vs. Random Forest) en lo que se calcula con estos datos:
        tamaño de muestra por brazo para detectar la reducción de error de precio observada y
        efecto mínimo detectable para tamaños fijos. Lo demás queda como propuesta.
+    5. Sensibilidad a gemelos: RMSE y MAPE de prueba de todos los modelos con y sin las
+       viviendas de prueba que tienen un gemelo exacto en entrenamiento (misma área, precio,
+       coordenadas y habitaciones). Son anuncios que la limpieza no elimina porque difieren
+       en otra columna y pueden ser el mismo inmueble o unidades distintas de un edificio.
 
 Se corre desde la raíz del repo: python 02_Scripts/05_analisis_errores_impacto.py
 """
@@ -47,6 +54,8 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 RAIZ = Path(__file__).resolve().parent.parent
 RUTA_PREDICCIONES = RAIZ / "03_Resultados" / "Tablas" / "04_predicciones_prueba.csv"
+RUTA_LIMPIA = RAIZ / "01_Datos" / "02_Limpios" / "apartamentos_venta_limpio.csv"
+RUTA_PARTICION = RAIZ / "01_Datos" / "02_Limpios" / "particion_train_test.csv"
 DIR_TABLAS = RAIZ / "03_Resultados" / "Tablas"
 DIR_FIGURAS = RAIZ / "03_Resultados" / "Figuras"
 
@@ -68,6 +77,9 @@ Z_ALFA = 1.96
 Z_POTENCIA = 0.8416
 # Tamaños por brazo con los que se reporta el efecto mínimo detectable (supuestos del diseño)
 N_POR_BRAZO = [100, 500, 1000]
+
+# Gemelo: vivienda de entrenamiento con estas mismas columnas que una de prueba
+CLAVE_GEMELO = ["area", "precio_venta", "latitud", "longitud", "habitaciones"]
 
 # Colores de las figuras (misma paleta que 04_estimacion_modelos.py)
 SUPERFICIE = "#fcfcfb"
@@ -316,13 +328,57 @@ Queda como propuesta (no se puede calcular con estos datos):
 
 
 # ---------------------------------------------------------------------------
-# 5. Figuras
+# 5. Sensibilidad a gemelos entre entrenamiento y prueba
 # ---------------------------------------------------------------------------
-titulo("5. FIGURAS")
+titulo("5. SENSIBILIDAD A GEMELOS ENTRE ENTRENAMIENTO Y PRUEBA")
+print(f"Gemelo: vivienda de entrenamiento con igual {CLAVE_GEMELO}. Puede ser el mismo inmueble\n"
+      "publicado por otra inmobiliaria o una unidad distinta del mismo edificio; no se elimina,\n"
+      "solo se mide cuánto cambian las métricas de prueba sin esas viviendas.")
+limpia = pd.read_csv(RUTA_LIMPIA, usecols=["codigo"] + CLAVE_GEMELO, dtype={"codigo": str})
+particion = pd.read_csv(RUTA_PARTICION, dtype={"codigo": str})
+limpia = limpia.merge(particion, on="codigo", validate="one_to_one")
+claves_entrenamiento = limpia.loc[limpia["conjunto"] == "entrenamiento", CLAVE_GEMELO].drop_duplicates()
+prueba_gemelos = limpia.loc[limpia["conjunto"] == "prueba", ["codigo"] + CLAVE_GEMELO].merge(
+    claves_entrenamiento.assign(tiene_gemelo=True), on=CLAVE_GEMELO, how="left")
+prueba_gemelos["tiene_gemelo"] = prueba_gemelos["tiene_gemelo"].fillna(False).astype(bool)
+
+pred_gemelos = predicciones.assign(codigo=predicciones["codigo"].astype(str)).merge(
+    prueba_gemelos[["codigo", "tiene_gemelo"]], on="codigo", how="left", validate="one_to_one")
+assert pred_gemelos["tiene_gemelo"].notna().all(), "Hay viviendas de prueba sin cruce con la partición"
+n_gemelos = int(pred_gemelos["tiene_gemelo"].sum())
+print(f"Viviendas de prueba con gemelo en entrenamiento: {n_gemelos:,} de {len(pred_gemelos):,} "
+      f"({100 * n_gemelos / len(pred_gemelos):.1f}%)")
+
+subconjuntos = {
+    "todas": pd.Series(True, index=pred_gemelos.index),
+    "sin_gemelo": ~pred_gemelos["tiene_gemelo"],
+    "con_gemelo": pred_gemelos["tiene_gemelo"],
+}
+filas = []
+for columna in [c for c in pred_gemelos.columns if c.startswith("pred_")]:
+    modelo, escala = columna[len("pred_"):].rsplit("_", 1)
+    for nombre, mascara in subconjuntos.items():
+        sub = pred_gemelos[mascara]
+        error = sub[columna] - sub[OBJETIVO]
+        filas.append({"modelo": modelo, "escala": escala, "subconjunto": nombre, "n_prueba": len(sub),
+                      "rmse": np.sqrt((error ** 2).mean()),
+                      "mape": 100 * (error.abs() / sub[OBJETIVO]).mean()})
+sensibilidad = pd.DataFrame(filas)
+guardar_tabla(sensibilidad, "05_sensibilidad_gemelos.csv")
+with pd.option_context("display.width", 200, "display.float_format", "{:,.1f}".format):
+    vista = sensibilidad.assign(rmse_millones=sensibilidad["rmse"] / 1e6).pivot_table(
+        index=["modelo", "escala"], columns="subconjunto", values=["rmse_millones", "mape"])
+    print(vista.reindex(columns=["todas", "sin_gemelo", "con_gemelo"], level=1).to_string())
+
+
+# ---------------------------------------------------------------------------
+# 6. Figuras
+# ---------------------------------------------------------------------------
+titulo("6. FIGURAS")
 plt.rcParams.update({"font.family": "sans-serif", "font.size": 9, "text.color": TINTA,
                      "axes.labelcolor": TINTA_SECUNDARIA, "figure.facecolor": SUPERFICIE})
 
-# 5a. Costo esperado por estrato: sobrecosto del comprador (arriba) y pérdida del vendedor
+# 6a. Costo esperado por estrato: sobrecosto del comprador (arriba) y pérdida del vendedor
 # (abajo), como % del precio mediano del estrato, un panel por escala
 estratos = sorted(err_estrato["estrato"].unique())
 n_por_estrato = err_estrato.query("modelo == @BASE and escala == 'log'").set_index("estrato")["n_prueba"]
@@ -348,7 +404,7 @@ fig.suptitle("Costo esperado por vivienda del error de precio en prueba, por est
              x=0.07, ha="left", fontsize=11, color=TINTA)
 guardar_figura(fig, "05_costo_esperado_por_estrato.png")
 
-# 5b. Sesgo relativo medio por localidad: base y Random Forest, un panel por escala.
+# 6b. Sesgo relativo medio por localidad: base y Random Forest, un panel por escala.
 # Marcador vacío = grupo con menos de N_MINIMO_GRUPO_PRUEBA viviendas en prueba
 orden = (err_localidad.query("modelo == @PRINCIPAL and escala == 'log'")
          .sort_values("sesgo_rel_medio_pct").reset_index(drop=True))

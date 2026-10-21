@@ -43,8 +43,8 @@ ahorro, con revisión trimestral sobre datos nuevos.
   estaciones troncales de TransMilenio, paraderos del SITP, centros comerciales
   y escenarios deportivos.
 - **Base limpia:** `01_Datos/02_Limpios/apartamentos_venta_limpio.csv`, solo con
-  ventas (`VENTA` y `VENTA Y ARRIENDO`), sin N/A y con los tipos del diccionario
-  de columnas. Las columnas y observaciones que se descartaron, y por qué, están
+  ventas (`VENTA` y `VENTA Y ARRIENDO`), sin N/A, sin anuncios repetidos y con
+  los tipos del diccionario de columnas. Las columnas y observaciones que se descartaron, y por qué, están
   en `CLAUDE.md` y en
   [03_Resultados/Tablas/01_perdida_observaciones.csv](03_Resultados/Tablas/01_perdida_observaciones.csv).
 
@@ -58,6 +58,13 @@ Cuidados al usar la base:
 - habi.co no reporta `estado` ni `compañia`, y `administracion` no existe en los
   proyectos nuevos. Por eso esas columnas no están en la base limpia.
 - `antiguedad` es categórica por rangos, no años.
+- Un mismo inmueble puede aparecer con varios códigos (republicado por la
+  inmobiliaria o por varias). La limpieza elimina solo las copias idénticas salvo
+  código y fechas
+  ([01_duplicados_eliminados.csv](03_Resultados/Tablas/01_duplicados_eliminados.csv));
+  las demás pueden ser unidades distintas de un edificio y se conservan, con una
+  sensibilidad de las métricas en
+  [05_sensibilidad_gemelos.csv](03_Resultados/Tablas/05_sensibilidad_gemelos.csv).
 - `coords_modified == True` marca coordenadas ajustadas; usarlas con cautela.
 - `last_view` no es una fecha confiable de vigencia del anuncio.
 - El precio es el **publicado**, no el de transacción.
@@ -107,8 +114,13 @@ Scripts, en orden de ejecución (desde la raíz del repositorio):
    `04_*.csv` y las figuras `04_*.png`. Tarda varios minutos.
 5. `python 02_Scripts/05_analisis_errores_impacto.py`: desagrega por estrato y
    localidad los errores de prueba de la línea base y el Random Forest, los traduce
-   a costo para comprador y vendedor y dimensiona la prueba A/B. Escribe las tablas
-   `05_*.csv` y las figuras `05_*.png`.
+   a costo para comprador y vendedor, dimensiona la prueba A/B y mide la
+   sensibilidad de las métricas de prueba a las viviendas con un gemelo en
+   entrenamiento. Escribe las tablas `05_*.csv` y las figuras `05_*.png`.
+6. `python 02_Scripts/06_figuras_presentacion.py`: redibuja las figuras de la
+   presentación de avance con la paleta de las diapositivas (`06_*.png`).
+7. `python 02_Scripts/07_perfil_descripcion.py`: describe el texto de
+   `descripcion` (largo y temas mencionados) y escribe las tablas `07_*.csv`.
 
 `python 00_main.py` corre estos scripts en orden. Si se usa el entorno virtual:
 `.venv/bin/python 00_main.py`.
