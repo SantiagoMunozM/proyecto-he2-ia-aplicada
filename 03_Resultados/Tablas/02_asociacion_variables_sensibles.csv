@@ -1,0 +1,4 @@
+variable,estrato,localidad,barrio
+estrato,1.0,0.4673,0.8028
+localidad,0.4673,1.0,0.9989
+barrio,0.8028,0.9989,1.0
