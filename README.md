@@ -105,6 +105,10 @@ Scripts, en orden de ejecución (desde la raíz del repositorio):
 4. `python 02_Scripts/04_estimacion_modelos.py`: estima la línea base, Lasso,
    Random Forest y XGBoost (objetivo en log y en niveles), y escribe las tablas
    `04_*.csv` y las figuras `04_*.png`. Tarda varios minutos.
+5. `python 02_Scripts/05_analisis_errores_impacto.py`: desagrega por estrato y
+   localidad los errores de prueba de la línea base y el Random Forest, los traduce
+   a costo para comprador y vendedor y dimensiona la prueba A/B. Escribe las tablas
+   `05_*.csv` y las figuras `05_*.png`.
 
 `python 00_main.py` corre estos scripts en orden. Si se usa el entorno virtual:
 `.venv/bin/python 00_main.py`.
@@ -130,7 +134,9 @@ Existe el riesgo de que el modelo perpetúe
 desigualdades históricas de inversión urbana, y los más afectados por una
 sub o sobrevaloración serían los hogares de estratos bajos y de zonas
 periféricas (créditos hipotecarios, subsidios). Por eso el análisis de errores
-se desagrega por estrato y localidad, y el proyecto incluye una sección de
+se desagrega por estrato y localidad (tablas `05_errores_por_*.csv` y
+`05_costo_esperado_por_estrato.csv` en `03_Resultados/Tablas/`, con los grupos de
+menos de 30 viviendas en prueba marcados), y el proyecto incluye una sección de
 riesgos éticos, sesgos y estrategias de mitigación.
 
 ## Uso de IA generativa

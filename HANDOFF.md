@@ -9,37 +9,29 @@ estamos y qué sigue.
 <!-- Una sola tarea concreta, con el script o archivo que debe producirse y
      cómo se sabe que quedó terminada. Se reescribe al cerrar cada sesión. -->
 
-**Objetivo:** análisis de errores por estrato y localidad y evaluación de
-impacto, en `02_Scripts/05_analisis_errores_impacto.py`. Lee
-`03_Resultados/Tablas/04_predicciones_prueba.csv` (y las tablas
-`04_errores_por_estrato.csv` y `04_errores_por_localidad.csv`, que existen pero
-no se han interpretado) y traduce los errores de prueba a costo para el usuario.
+**Objetivo:** ampliar la grilla del Random Forest en
+`02_Scripts/04_estimacion_modelos.py` (`min_samples_leaf=1` quedó en el borde de
+`GRILLA_RF`, p. ej. agregar valores menores de `max_features` y mayores de
+`min_samples_leaf` sin tocar la partición) y volver a correr 04 y 05, antes de
+interpretar o presentar los errores por estrato y localidad.
 
-**Criterio de terminado:** el script corre desde la raíz sin intervención
-(también dentro de `python 00_main.py`) y escribe, en `03_Resultados/Tablas/` y
-`Figuras/` con prefijo `05_`, sin números a mano:
-
-- sesgo de las predicciones (sobre y subvaloración) y error en COP por estrato
-  y por localidad, para la línea base y para el Random Forest, con los grupos de
-  menos de 30 viviendas en prueba marcados;
-- error esperado en pesos por vivienda según estrato, como insumo de la
-  traducción a costo/beneficio para compradores y vendedores;
-- el diseño de la prueba A/B (lineal vs. Random Forest) reducido a lo que se
-  pueda calcular desde los datos disponibles, con lo demás anotado como
-  propuesta.
+**Criterio de terminado:** `GRILLA_RF` ampliada con el valor elegido por CV en el
+interior de la grilla (o anotado que sigue en el borde); `python 00_main.py` corre
+completo sin intervención, incluido `05_analisis_errores_impacto.py`; las tablas
+`04_*` y `05_*` quedan regeneradas y se reporta cuánto cambian RMSE y MAPE de
+prueba del Random Forest frente a la línea base respecto de la grilla anterior.
 
 **Bloqueos / preguntas abiertas:**
 
-- Qué tamaño mínimo de grupo se acepta para interpretar errores (estrato 1 tiene
-  16 viviendas en prueba).
-- Qué parte de la evaluación de impacto se calcula ahora y cuál queda solo como
-  propuesta en la presentación.
-- Si se amplía la grilla del Random Forest (`min_samples_leaf=1` quedó en el
-  borde) antes de interpretar errores.
+- Confirmar con el equipo el umbral de 30 viviendas en prueba para interpretar un
+  grupo (estrato 1 tiene 16) y qué parte de la evaluación de impacto se calcula
+  (error de precio) y cuál queda como propuesta (tiempo de compra/venta y ahorro).
 - Completar roles y correos de Maria Paula Rivera y Angelo Di Marco en
   `CLAUDE.md`.
 - Documentar la sesión del commit `bd96c50` (partición y estimación), que no
   tiene bitácora.
+- Pendiente de fondo: modelo de texto con `descripcion` y sección de IA
+  responsable para las presentaciones de avance.
 
 ## Estado actual
 
@@ -68,13 +60,29 @@ no se han interpretado) y traduce los errores de prueba a costo para el usuario.
   varios minutos por las grillas de Random Forest y XGBoost.
 - `00_main.py` corre en orden todos los scripts numerados de `02_Scripts/`.
 - `requirements.txt` fija el entorno (Python 3.13, `.venv/` local no versionado).
-- Sin análisis interpretado de errores por grupo, sin modelo de texto y sin
-  evaluación de impacto todavía.
+- `02_Scripts/05_analisis_errores_impacto.py`: lee las predicciones de prueba de
+  04 y compara la línea base con el Random Forest por estrato y localidad (RMSE,
+  MAE, sesgo, proporción sobre/subvalorada, grupos de menos de 30 viviendas
+  marcados), calcula el costo esperado por vivienda para comprador y vendedor y
+  dimensiona la prueba A/B del error de precio. Tablas y figuras `05_*`.
+- Sin modelo de texto y sin evaluación de impacto con datos reales (tiempo de
+  compra/venta y ahorro quedan como propuesta). Los resultados `04_*` y `05_*`
+  dependen de la grilla actual del Random Forest.
 
 ## Registro de sesiones
 
 <!-- Una entrada por sesión, la más reciente arriba. Tres a cinco líneas:
      qué se hizo y enlace a la bitácora. -->
+
+### 2026-10-20: análisis de errores por estrato y localidad y evaluación de impacto
+
+- Santiago Muñoz (inferido del usuario de git). Se escribió
+  `02_Scripts/05_analisis_errores_impacto.py`: errores de prueba por estrato y
+  localidad (línea base y Random Forest), costo esperado para comprador y vendedor
+  y dimensionamiento de la prueba A/B del error de precio. Tablas y figuras `05_*`.
+- Se fijó el umbral de 30 viviendas para marcar grupos; tiempo de compra/venta y
+  ahorro quedan como propuesta. No se corrió `00_main.py` completo.
+- Bitácora: [2026-10-20_analisis-errores-impacto.md](06_Bitacoras/2026-10-20_analisis-errores-impacto.md)
 
 ### 2026-10-20: revisión de las métricas de los modelos
 
