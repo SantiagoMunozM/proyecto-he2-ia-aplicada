@@ -7,5 +7,5 @@ xgboost,log,"n_estimators=800, learning_rate=0.05, max_depth=6"
 lineal_base,niveles,ninguno
 lineal_completo,niveles,ninguno
 lasso,niveles,alpha=920838
-random_forest,niveles,"max_features=0.5, min_samples_leaf=1"
+random_forest,niveles,"max_features=0.4, min_samples_leaf=1"
 xgboost,niveles,"n_estimators=800, learning_rate=0.05, max_depth=8"

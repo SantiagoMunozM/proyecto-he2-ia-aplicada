@@ -116,10 +116,12 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
   Para regresión use las versiones `Regressor` de los estimadores. XGBoost
   (`xgboost`) solo como comparación, igual que en clase.
 - Use solo herramientas vistas en el curso y escriba los pasos de forma
-  explícita (p. ej. `pd.get_dummies`, `fit`/`transform` a mano, un ciclo sobre
-  `KFold`). No use `Pipeline`, `ColumnTransformer`, `TransformedTargetRegressor`
-  ni `GridSearchCV`. Si hace falta una herramienta que no se vio en clase,
-  explique para qué sirve y consulte antes de usarla.
+  explícita (p. ej. `pd.get_dummies`, `fit`/`transform` a mano). Para la
+  validación cruzada y la búsqueda de hiperparámetros se autorizan, además de
+  `KFold`/`cross_val_score`, `cross_validate` y `GridSearchCV` (ver "Decisiones
+  tomadas"). No use `Pipeline`, `ColumnTransformer` ni
+  `TransformedTargetRegressor`. Si hace falta una herramienta que no se vio en
+  clase, explique para qué sirve y consulte antes de usarla.
 - **Un script por tarea**, numerado en orden de ejecución
   (`02_Scripts/01_limpieza_datos.py`, `02_...`). Cada script
   lee sus insumos de `01_Datos/` y escribe sus salidas en `01_Datos/` o
@@ -232,7 +234,9 @@ sigue.
 | 2026-10-20 | Partición única 80/20 estratificada por estrato (`random_state=2026`), guardada en `01_Datos/02_Limpios/particion_train_test.csv` por `03_particion_muestra.py`. | `datetime` cubre solo jul–sep de 2024 (no da para split temporal); estrato 1 tiene 80 viviendas y debe estar en prueba. Todo modelo, incluido el de texto, usa el mismo conjunto de prueba. |
 | 2026-10-20 | Cada modelo se estima con el objetivo en log(precio) y en niveles; las métricas siempre en COP. | Decisión del equipo: comparar ambas escalas en lugar de elegir una a priori. |
 | 2026-10-20 | En los lineales con objetivo en log, el área entra como log(area) (log-log); en niveles, en niveles. | Con el área en niveles, exp(b·area) explota para viviendas de más de 1,000 m² (predicciones de billones de COP). Los árboles no cambian con transformaciones monótonas. |
-| 2026-10-20 | La estimación no usa `Pipeline`, `ColumnTransformer`, `TransformedTargetRegressor` ni `GridSearchCV`: dummies con `pd.get_dummies` definidas en entrenamiento (prueba alineada a esas columnas), log del objetivo a mano, CV con un ciclo explícito sobre `KFold` y RMSE en pesos, importancia con `feature_importances_` (dummies sumadas por variable). | No se ven en el curso. El escalador de Lasso (todas las columnas, incluidas las dummies) se ajusta con todo el entrenamiento: la fuga entre folds de la CV es mínima (solo media y desviación de las X, nunca el precio) y la prueba no se toca. |
+| 2026-10-20 | La estimación no usa `Pipeline`, `ColumnTransformer` ni `TransformedTargetRegressor`: dummies con `pd.get_dummies` definidas en entrenamiento (prueba alineada a esas columnas), log del objetivo a mano, importancia con `feature_importances_` (dummies sumadas por variable). La CV y la búsqueda de hiperparámetros se hacen como indica la decisión siguiente. | No se ven en el curso. El escalador de Lasso (todas las columnas, incluidas las dummies) se ajusta con todo el entrenamiento: la fuga entre folds de la CV es mínima (solo media y desviación de las X, nunca el precio) y la prueba no se toca. |
+| 2026-10-20 | La CV de todos los modelos usa `cross_validate` con el `KFold` fijo (`random_state=2026`). Las grillas de Random Forest y XGBoost con el objetivo en niveles usan `GridSearchCV` (`refit` por RMSE en pesos); con el objetivo en log se recorre la grilla a mano y cada combinación se mide con `cross_validate` y un puntaje propio. Reemplaza al ciclo manual sobre `KFold`. Pedido por Santiago Muñoz; pendiente de confirmar con el equipo. | Menos código y los resultados de la grilla salen de `cv_results_`. En niveles el RMSE y el MAPE estándar ya están en pesos; en log el puntaje estándar mediría el error en log(precio), así que se usa un puntaje propio (`exp` de real y predicho) para no cambiar el criterio de selección. Verificado con la grilla anterior: las tablas de CV, métricas y predicciones coinciden con las del ciclo manual (diferencia relativa máxima de 6e-6, en una desviación estándar de XGBoost). |
+| 2026-10-21 | Grilla del Random Forest: `max_features` en [0.2, 0.33, 0.4, 0.5, 0.6, 0.75, 1.0] y `min_samples_leaf` en [1, 2, 3, 5]. | La anterior ([0.33, 0.5, 1.0] × [1, 3, 10]) dejaba `min_samples_leaf=1` en el borde. Ese valor es el mínimo posible y el RMSE de CV sube al aumentarlo, así que sigue siendo el elegido (se anota, no se puede extender). `max_features` quedó en el interior (0.5 en log, 0.4 en niveles). Selección solo por CV sobre entrenamiento; no se tocó la partición. |
 | 2026-10-20 | `barrio` no entra como variable; la ubicación fina se toma de latitud y longitud (más localidad y distancias). | 1,387 categorías: el one-hot es muy disperso y el target encoding arriesga fuga. `barrio` se conserva para desagregar errores. |
 | 2026-10-20 | Línea base: lineal con `area`, `habitaciones`, `estrato`, `antiguedad` y `localidad`. Conjunto completo (Lasso, RF, XGB): base + baños, parqueaderos, tipo de propiedad, lat/lon, distancias, amenidades. | Excluidas del modelado, con razón en `04_estimacion_modelos.py`: `website`, `sector`, `tipo_operacion`, fechas, nombres de estación y parque, `coords_modified`, `descripcion` (reservada para modelo de texto) y las constantes. |
 

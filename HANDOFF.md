@@ -9,20 +9,27 @@ estamos y qué sigue.
 <!-- Una sola tarea concreta, con el script o archivo que debe producirse y
      cómo se sabe que quedó terminada. Se reescribe al cerrar cada sesión. -->
 
-**Objetivo:** ampliar la grilla del Random Forest en
-`02_Scripts/04_estimacion_modelos.py` (`min_samples_leaf=1` quedó en el borde de
-`GRILLA_RF`, p. ej. agregar valores menores de `max_features` y mayores de
-`min_samples_leaf` sin tocar la partición) y volver a correr 04 y 05, antes de
-interpretar o presentar los errores por estrato y localidad.
+**Objetivo:** revisar si los resultados que hay alcanzan para la presentación de
+avance y dejar la lista de lo que falta. Se contrasta cada criterio de la rúbrica
+(`../Rubrica_Presentacion_Avance.xlsx`: resultados con métodos clásicos, objetivos
+prácticos, diagnóstico de obstáculos, propuesta de aprendizaje profundo o IA
+generativa, evaluación e impacto, IA responsable y trabajo en equipo) con las
+tablas y figuras de `03_Resultados/` que lo sustentan. Es una revisión, no genera
+resultados nuevos: cualquier cifra que cite sale de una tabla existente.
 
-**Criterio de terminado:** `GRILLA_RF` ampliada con el valor elegido por CV en el
-interior de la grilla (o anotado que sigue en el borde); `python 00_main.py` corre
-completo sin intervención, incluido `05_analisis_errores_impacto.py`; las tablas
-`04_*` y `05_*` quedan regeneradas y se reporta cuánto cambian RMSE y MAPE de
-prueba del Random Forest frente a la línea base respecto de la grilla anterior.
+**Criterio de terminado:** existe `05_Notas/revision_resultados_avance.md` con una
+fila por criterio de la rúbrica (con su peso), la evidencia que ya hay (rutas a
+tablas y figuras), lo que falta y el trabajo concreto para cubrirlo, y una lista de
+brechas ordenada por peso en la nota. Lo que ya se sabe: no hay nada hecho para la
+propuesta de aprendizaje profundo o IA generativa (peso 0.20), cuyo candidato es un
+modelo de texto con `descripcion`. Se espera además dividir las brechas entre los
+tres integrantes (criterio de trabajo en equipo) y decidir cuáles entran antes de
+la presentación.
 
 **Bloqueos / preguntas abiertas:**
 
+- Confirmar con el equipo el uso de `cross_validate` y `GridSearchCV` (registrado
+  en `CLAUDE.md` como pedido por Santiago Muñoz).
 - Confirmar con el equipo el umbral de 30 viviendas en prueba para interpretar un
   grupo (estrato 1 tiene 16) y qué parte de la evaluación de impacto se calcula
   (error de precio) y cuál queda como propuesta (tiempo de compra/venta y ahorro).
@@ -30,8 +37,6 @@ prueba del Random Forest frente a la línea base respecto de la grilla anterior.
   `CLAUDE.md`.
 - Documentar la sesión del commit `bd96c50` (partición y estimación), que no
   tiene bitácora.
-- Pendiente de fondo: modelo de texto con `descripcion` y sección de IA
-  responsable para las presentaciones de avance.
 
 ## Estado actual
 
@@ -53,12 +58,17 @@ prueba del Random Forest frente a la línea base respecto de la grilla anterior.
   (21,859 en entrenamiento, 5,465 en prueba); tabla `03_composicion_particion.csv`.
 - `02_Scripts/04_estimacion_modelos.py`: línea base lineal, lineal completo,
   Lasso, Random Forest y XGBoost, cada uno con el objetivo en log y en niveles,
-  con hiperparámetros por CV de 5 folds sobre entrenamiento. Reporta RMSE y MAPE
-  en entrenamiento, CV y prueba, la diferencia entre prueba y CV (sin umbral), el
-  cambio frente a la línea base, coeficientes, importancia de variables y errores
-  por estrato y localidad. Tablas y figuras `04_*` en `03_Resultados/`. Tarda
-  varios minutos por las grillas de Random Forest y XGBoost.
-- `00_main.py` corre en orden todos los scripts numerados de `02_Scripts/`.
+  con hiperparámetros por CV de 5 folds sobre entrenamiento (`cross_validate` en
+  todos los modelos; `GridSearchCV` para Random Forest y XGBoost con el objetivo en
+  niveles, y recorrido explícito de la grilla en log). Grilla del Random Forest:
+  `max_features` en 7 valores y `min_samples_leaf` en [1, 2, 3, 5]; la CV elige
+  `min_samples_leaf=1` (el mínimo permitido) en las dos escalas. Reporta RMSE y
+  MAPE en entrenamiento, CV y prueba, la diferencia entre prueba y CV (sin umbral),
+  el cambio frente a la línea base, coeficientes, importancia de variables y
+  errores por estrato y localidad. Tablas y figuras `04_*` en `03_Resultados/`.
+  Tarda unos 14 min (el pipeline completo, con la grilla actual).
+- `00_main.py` corre en orden todos los scripts numerados de `02_Scripts/`; la
+  corrida completa de 01 a 05 está verificada (2026-10-21, sin errores).
 - `requirements.txt` fija el entorno (Python 3.13, `.venv/` local no versionado).
 - `02_Scripts/05_analisis_errores_impacto.py`: lee las predicciones de prueba de
   04 y compara la línea base con el Random Forest por estrato y localidad (RMSE,
@@ -66,13 +76,25 @@ prueba del Random Forest frente a la línea base respecto de la grilla anterior.
   marcados), calcula el costo esperado por vivienda para comprador y vendedor y
   dimensiona la prueba A/B del error de precio. Tablas y figuras `05_*`.
 - Sin modelo de texto y sin evaluación de impacto con datos reales (tiempo de
-  compra/venta y ahorro quedan como propuesta). Los resultados `04_*` y `05_*`
-  dependen de la grilla actual del Random Forest.
+  compra/venta y ahorro quedan como propuesta).
 
 ## Registro de sesiones
 
 <!-- Una entrada por sesión, la más reciente arriba. Tres a cinco líneas:
      qué se hizo y enlace a la bitácora. -->
+
+### 2026-10-21: `cross_validate`, `GridSearchCV` y grilla del Random Forest
+
+- Santiago Muñoz (inferido del usuario de git). En `04_estimacion_modelos.py`,
+  `cross_validate` reemplaza el ciclo manual de CV y `GridSearchCV` elige los
+  hiperparámetros con el objetivo en niveles; `CLAUDE.md` se actualizó. Con la
+  grilla anterior las tablas coinciden con las previas (diferencia máxima de 6e-6).
+- Se amplió `GRILLA_RF`: `max_features` queda en el interior (0.5 en log, 0.4 en
+  niveles) y `min_samples_leaf=1` sigue siendo el elegido (es el mínimo posible).
+  `00_main.py` corrió completo (14.2 min) y se regeneraron las tablas `04_*` y `05_*`.
+- Objetivo anterior cumplido; el siguiente es revisar los resultados contra la
+  rúbrica del avance.
+- Bitácora: [2026-10-21_cross-validate-gridsearch-grilla-rf.md](06_Bitacoras/2026-10-21_cross-validate-gridsearch-grilla-rf.md)
 
 ### 2026-10-20: análisis de errores por estrato y localidad y evaluación de impacto
 

@@ -20,7 +20,7 @@ es el precio de venta publicado (`precio_venta`). El precio de arriendo
 | Modelo propuesto | Random Forest (`RandomForestRegressor`), comparado contra la línea base |
 | Comparación adicional | XGBoost, solo como referencia |
 | Métricas | RMSE (principal) y MAPE (secundaria) |
-| Validación | Conjunto de prueba separado al inicio; hiperparámetros con validación cruzada solo sobre entrenamiento |
+| Validación | Conjunto de prueba separado al inicio; hiperparámetros con validación cruzada (`cross_validate`, y `GridSearchCV` para el objetivo en niveles) solo sobre entrenamiento |
 | Semilla | `random_state=2026` en toda partición, validación y modelo aleatorio |
 
 Todo modelo se reporta junto a la línea base, en entrenamiento, validación

@@ -29,7 +29,9 @@ Pasos:
     2. Arma las matrices de variables con dummies. Las columnas se definen con
        entrenamiento y la prueba se alinea a ellas.
     3. Estima cada modelo solo con entrenamiento. Los hiperparámetros se eligen
-       con validación cruzada (KFold de 5, random_state=2026) por RMSE en pesos.
+       con validación cruzada (KFold de 5, random_state=2026) por RMSE en pesos:
+       cross_validate en todos los modelos y, con el objetivo en niveles,
+       GridSearchCV para las grillas de Random Forest y XGBoost.
     4. Evalúa una sola vez en prueba: RMSE y MAPE en entrenamiento, CV y prueba,
        diferencia entre CV y prueba y cambio frente a la línea base.
     5. Desagrega los errores de prueba por estrato y localidad, e interpreta
@@ -50,7 +52,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Lasso, LassoCV, LinearRegression
 from sklearn.metrics import mean_absolute_percentage_error, root_mean_squared_error
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV, KFold, cross_validate
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
@@ -103,7 +105,9 @@ COLUMNAS_EXCLUIDAS = {
 }
 
 # Grillas de hiperparámetros (se eligen por RMSE de validación cruzada, solo en entrenamiento)
-GRILLA_RF = {"max_features": [0.33, 0.5, 1.0], "min_samples_leaf": [1, 3, 10]}
+# Random Forest: min_samples_leaf=1 es el mínimo posible (y el que elegía la CV con [1, 3, 10], donde el
+# error subía con el valor), así que se afina entre 1 y 5; max_features se refina alrededor de 0.5.
+GRILLA_RF = {"max_features": [0.2, 0.33, 0.4, 0.5, 0.6, 0.75, 1.0], "min_samples_leaf": [1, 2, 3, 5]}
 GRILLA_XGB = {"n_estimators": [300, 800], "learning_rate": [0.05, 0.1], "max_depth": [4, 6, 8]}
 
 # Nombres legibles y orden de presentación de los modelos
@@ -185,23 +189,39 @@ def matrices(num, cat, log_area=False):
     return X_tr, X_pr
 
 
+def puntaje_rmse_log(modelo, X, y_log):
+    """Puntaje (negativo, como los de scikit-learn) para cross_validate con el objetivo en log:
+    el RMSE se mide en pesos, no en log(precio). Recibe y en log y devuelve -RMSE en COP."""
+    return -rmse(a_pesos(y_log, "log"), a_pesos(modelo.predict(X), "log"))
+
+
+def puntaje_mape_log(modelo, X, y_log):
+    """Igual que puntaje_rmse_log, para el MAPE (como fracción, negativo)."""
+    return -mean_absolute_percentage_error(a_pesos(y_log, "log"), a_pesos(modelo.predict(X), "log"))
+
+
+def puntajes(escala):
+    """Puntajes de CV en pesos. En niveles bastan los estándar; en log, los propios de arriba."""
+    if escala == "log":
+        return {"rmse": puntaje_rmse_log, "mape": puntaje_mape_log}
+    return {"rmse": "neg_root_mean_squared_error", "mape": "neg_mean_absolute_percentage_error"}
+
+
 def cv_en_pesos(modelo, X, y, escala):
-    """Validación cruzada con KFold: RMSE y MAPE en pesos (media y desviación entre folds).
+    """Validación cruzada con cross_validate y el KFold fijo: RMSE y MAPE en pesos (media y desviación entre folds).
 
     En cada fold el modelo se ajusta con 4/5 del entrenamiento y se evalúa en el 1/5 restante.
     """
-    rmses, mapes = [], []
-    for idx_ajuste, idx_validacion in KFOLD.split(X):
-        modelo.fit(X.iloc[idx_ajuste], a_escala(y.iloc[idx_ajuste], escala))
-        pred = a_pesos(modelo.predict(X.iloc[idx_validacion]), escala)
-        rmses.append(rmse(y.iloc[idx_validacion], pred))
-        mapes.append(mape(y.iloc[idx_validacion], pred))
-    return {"rmse_cv": np.mean(rmses), "rmse_cv_sd": np.std(rmses),
-            "mape_cv": np.mean(mapes), "mape_cv_sd": np.std(mapes)}
+    cv = cross_validate(modelo, X, a_escala(y, escala), cv=KFOLD, scoring=puntajes(escala))
+    return {"rmse_cv": -cv["test_rmse"].mean(), "rmse_cv_sd": cv["test_rmse"].std(),
+            "mape_cv": -100 * cv["test_mape"].mean(), "mape_cv_sd": 100 * cv["test_mape"].std()}
 
 
 def elegir_por_cv(crear_modelo, grilla, X, y, escala, nombre):
-    """Prueba cada combinación de la grilla con cv_en_pesos y elige la de menor RMSE de CV."""
+    """Recorre la grilla a mano, mide cada combinación con cv_en_pesos y elige la de menor RMSE de CV.
+
+    Se usa con el objetivo en log; con el objetivo en niveles se usa elegir_por_grid_search.
+    """
     filas, resultados = [], []
     for valores in itertools.product(*grilla.values()):
         params = dict(zip(grilla, valores))
@@ -212,7 +232,28 @@ def elegir_por_cv(crear_modelo, grilla, X, y, escala, nombre):
     mejores_params, mejor_cv = min(resultados, key=lambda r: r[1]["rmse_cv"])
     tabla = pd.DataFrame(filas)
     tabla["rango_rmse"] = tabla["rmse_cv"].rank(method="min").astype(int)
-    return mejores_params, mejor_cv, tabla
+    modelo = crear_modelo(mejores_params).fit(X, a_escala(y, escala))
+    return mejores_params, mejor_cv, tabla, modelo
+
+
+def elegir_por_grid_search(crear_modelo, grilla, X, y, escala, nombre):
+    """GridSearchCV con el KFold fijo (solo para el objetivo en niveles, donde el RMSE y el MAPE
+    estándar ya están en pesos). Elige por RMSE y reajusta el mejor con todo el entrenamiento."""
+    busqueda = GridSearchCV(crear_modelo({}), grilla, scoring=puntajes(escala), refit="rmse", cv=KFOLD)
+    busqueda.fit(X, a_escala(y, escala))
+    r = busqueda.cv_results_
+    tabla = pd.DataFrame(r["params"])
+    tabla.insert(0, "escala", escala)
+    tabla.insert(0, "modelo", nombre)
+    tabla["rmse_cv"], tabla["rmse_cv_sd"] = -r["mean_test_rmse"], r["std_test_rmse"]
+    tabla["mape_cv"], tabla["mape_cv_sd"] = -100 * r["mean_test_mape"], 100 * r["std_test_mape"]
+    tabla["segundos"] = N_FOLDS * (r["mean_fit_time"] + r["mean_score_time"])
+    tabla["rango_rmse"] = r["rank_test_rmse"]
+    mejor_cv = tabla.loc[busqueda.best_index_, ["rmse_cv", "rmse_cv_sd", "mape_cv", "mape_cv_sd"]].to_dict()
+    # GridSearchCV ordena los parámetros alfabéticamente: se devuelven en el orden de la grilla
+    tabla = tabla.sort_values(list(grilla), ignore_index=True)
+    params = {k: busqueda.best_params_[k] for k in grilla}
+    return params, mejor_cv, tabla, busqueda.best_estimator_
 
 
 def variable_original(columna, variables):
@@ -326,7 +367,9 @@ for escala in ESCALAS:
     hiperparametros.append({"modelo": "lasso", "escala": escala, "hiperparametros": f"alpha={alpha:.6g}"})
     print(f"  lasso: alpha={alpha:.6g}, RMSE CV {cv_metricas[('lasso', escala)]['rmse_cv']:,.0f}")
 
-    # 3c. Random Forest y XGBoost: se recorre la grilla y se elige por RMSE de CV en pesos
+    # 3c. Random Forest y XGBoost: se elige la combinación de la grilla por RMSE de CV en pesos.
+    # Objetivo en niveles: GridSearchCV. Objetivo en log: recorrido explícito con cross_validate,
+    # porque el RMSE debe medirse en pesos con un puntaje propio.
     creadores = {
         "random_forest": (lambda p: RandomForestRegressor(n_estimators=300, random_state=SEMILLA,
                                                           n_jobs=-1, **p), GRILLA_RF),
@@ -337,9 +380,10 @@ for escala in ESCALAS:
     for nombre, (crear_modelo, grilla) in creadores.items():
         t0 = time.time()
         X_tr, _ = X[(nombre, escala)]
-        params, mejor, tabla = elegir_por_cv(crear_modelo, grilla, X_tr, y_train, escala, nombre)
+        elegir = elegir_por_grid_search if escala == "niveles" else elegir_por_cv
+        params, mejor, tabla, modelo = elegir(crear_modelo, grilla, X_tr, y_train, escala, nombre)
         cv_metricas[(nombre, escala)] = mejor
-        ajustados[(nombre, escala)] = crear_modelo(params).fit(X_tr, a_escala(y_train, escala))
+        ajustados[(nombre, escala)] = modelo
         segundos[(nombre, escala)] = time.time() - t0
         hiperparametros.append({"modelo": nombre, "escala": escala,
                                 "hiperparametros": ", ".join(f"{k}={v}" for k, v in params.items())})
