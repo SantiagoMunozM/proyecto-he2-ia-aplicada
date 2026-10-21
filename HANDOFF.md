@@ -9,34 +9,31 @@ estamos y qué sigue.
 <!-- Una sola tarea concreta, con el script o archivo que debe producirse y
      cómo se sabe que quedó terminada. Se reescribe al cerrar cada sesión. -->
 
-**Objetivo:** análisis descriptivo de la base limpia, en
-`02_Scripts/02_analisis_descriptivo.py`. Lee
-`01_Datos/02_Limpios/apartamentos_venta_limpio.csv` (con
-`parse_dates=['datetime', 'last_view']`) y escribe tablas en
-`03_Resultados/Tablas/` y figuras en `03_Resultados/Figuras/`, con prefijo `02_`.
+**Objetivo:** línea base de regresión lineal, en `02_Scripts/03_modelo_baseline.py`.
+Lee `01_Datos/02_Limpios/apartamentos_venta_limpio.csv` (con
+`parse_dates=['datetime', 'last_view']`), separa un conjunto de prueba al
+inicio y entrena, dentro de un `Pipeline`, una `LinearRegression` con área,
+antigüedad, ubicación, estrato y habitaciones.
 
-**Criterio de terminado:** el script corre desde la raíz sin intervención y
-produce, desde la misma corrida (sin números a mano):
+**Criterio de terminado:** el script corre desde la raíz sin intervención,
+con `random_state=2026` en la partición, y reporta desde la misma corrida
+(sin números a mano), en `03_Resultados/Tablas/` con prefijo `03_`:
 
-- distribución de `precio_venta`, `area` y precio por m²;
-- precio por m² (conteo, media, mediana) por estrato y por localidad;
-- composición de la muestra por localidad × estrato y por `website`;
-- relación entre `antiguedad`, `estrato` y precio por m²;
-- tabla de las variables sensibles (estrato, localidad, barrio) y su asociación
-  entre sí, como insumo de la sección de IA responsable.
+- RMSE y MAPE en entrenamiento y en prueba;
+- los mismos errores desagregados por estrato y por localidad.
 
 **Bloqueos / preguntas abiertas:**
 
-- Definir el entorno de Python: `python` no existe en esta máquina; el script de
-  limpieza se corrió con `/usr/bin/python3` (3.9, pandas 2.2.0). Falta
-  `requirements.txt` y `00_main.py`.
-- Decidir si los gráficos se hacen con matplotlib (requiere instalarlo; no se
-  verificó si está disponible).
+- Cómo codificar `barrio` (1,387 categorías) y `localidad`/`sector` dentro del
+  `Pipeline`, ajustado solo con entrenamiento.
+- Si `website` entra como variable de control (`habi.co` es 2.9% de la
+  muestra).
+- Partición aleatoria o temporal (`datetime` cubre solo del 3 de julio al 3 de
+  septiembre de 2024).
 - Completar roles y correos de Maria Paula Rivera y Angelo Di Marco en
   `CLAUDE.md`.
-- Abiertas para el modelado, no bloquean el descriptivo: cómo codificar `barrio`
-  (1,387 categorías), si `website` entra como variable (habi.co es 2.9%) y
-  partición aleatoria o temporal (`datetime` cubre solo 3 jul–3 sep de 2024).
+- Falta `00_main.py` que corra el pipeline completo (lectura+limpieza →
+  descriptivo → modelo) en una sesión limpia.
 
 ## Estado actual
 
@@ -56,14 +53,37 @@ produce, desde la misma corrida (sin números a mano):
 - `03_Resultados/Tablas/01_*.csv`: resumen de columnas, embudo de pérdida de
   observaciones, pérdida por localidad y estrato, estadísticas numéricas y
   anomalías.
-- Sin particiones train/test, modelos ni figuras. Sin `00_main.py` ni
-  `requirements.txt`.
-- Los archivos de la sesión del 2026-10-20 (limpieza) están en `main` en GitHub.
+- `02_Scripts/02_analisis_descriptivo.py`: no filtra, describe la base limpia.
+  Produce distribución de precio/área/precio por m², precio por m² por
+  estrato y por localidad, composición de la muestra (localidad × estrato,
+  `website`), cruce antigüedad × estrato, y la asociación (Cramér's V) entre
+  estrato, localidad y barrio. Corre desde la raíz.
+- `03_Resultados/Tablas/02_*.csv` y `03_Resultados/Figuras/02_*.png`: tablas y
+  figuras del análisis descriptivo (ver bitácora para el detalle de cada una).
+- `requirements.txt` fija el entorno (`pandas`, `numpy`, `pyarrow`,
+  `scikit-learn`, `xgboost`, `matplotlib`), probado con Python 3.12 en un
+  entorno virtual local (`.venv/`, no versionado). `.gitignore` lo excluye.
+- Sin particiones train/test, modelos ni `00_main.py` todavía.
+- Los archivos de las sesiones del 2026-10-20 (limpieza y descriptivo) están
+  en `main` en GitHub.
 
 ## Registro de sesiones
 
 <!-- Una entrada por sesión, la más reciente arriba. Tres a cinco líneas:
      qué se hizo y enlace a la bitácora. -->
+
+### 2026-10-20: análisis descriptivo de la base limpia
+
+- Angelo Di Marco. Se escribió `02_Scripts/02_analisis_descriptivo.py`: tablas
+  y figuras de precio, área y precio por m² desagregadas por estrato y
+  localidad, composición de la muestra y asociación (Cramér's V) entre
+  estrato, localidad y barrio.
+- Se resolvió el bloqueo de entorno de Python (`requirements.txt` + entorno
+  virtual local, Python 3.12).
+- Un intento inicial de `01_lectura_datos.py` en una rama aparte se descartó
+  al encontrar que `01_limpieza_datos.py` ya cubría lectura y limpieza juntas
+  en `main`.
+- Bitácora: [2026-10-20_analisis-descriptivo.md](06_Bitacoras/2026-10-20_analisis-descriptivo.md)
 
 ### 2026-10-20: lectura, reconocimiento y limpieza de los datos
 
