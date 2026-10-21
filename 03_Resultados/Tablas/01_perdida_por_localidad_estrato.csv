@@ -1,0 +1,28 @@
+grupo,valor,n_alcance,n_final,n_perdidas,pct_perdidas
+localidad,ANTONIO NARINO,42,42,0,0.0
+localidad,BARRIOS UNIDOS,155,153,2,1.29
+localidad,BOSA,316,316,0,0.0
+localidad,CANDELARIA,40,40,0,0.0
+localidad,CHAPINERO,7429,7361,68,0.92
+localidad,CIUDAD BOLIVAR,213,212,1,0.47
+localidad,ENGATIVA,765,763,2,0.26
+localidad,FONTIBON,1057,1052,5,0.47
+localidad,KENNEDY,873,868,5,0.57
+localidad,LOS MARTIRES,160,160,0,0.0
+localidad,PUENTE ARANDA,129,128,1,0.78
+localidad,RAFAEL URIBE URIBE,92,92,0,0.0
+localidad,SAN CRISTOBAL,49,49,0,0.0
+localidad,SANTA FE,311,309,2,0.64
+localidad,SUBA,5100,5074,26,0.51
+localidad,TEUSAQUILLO,738,736,2,0.27
+localidad,TUNJUELITO,23,23,0,0.0
+localidad,USAQUEN,9930,9870,60,0.6
+localidad,USME,76,76,0,0.0
+estrato,0.0,7,0,7,100.0
+estrato,1.0,80,80,0,0.0
+estrato,2.0,957,954,3,0.31
+estrato,3.0,3395,3383,12,0.35
+estrato,4.0,5758,5738,20,0.35
+estrato,5.0,5315,5281,34,0.64
+estrato,6.0,11985,11888,97,0.81
+estrato,nan,1,0,1,100.0

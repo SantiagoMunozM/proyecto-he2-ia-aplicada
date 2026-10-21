@@ -1,0 +1,50 @@
+columna,en_readme,en_json,tipo_esperado,tipos_crudos_json,tipo_pandas_leido,n_faltantes,pct_faltantes,n_unicos,minimo,maximo,observacion,descartada_en_limpieza,tipo_final
+codigo,True,True,texto,str=43013,object,0.0,0.0,43013.0,,,,,object
+tipo_propiedad,True,True,texto,str=43013,object,0.0,0.0,3.0,,,,,object
+tipo_operacion,True,True,texto,str=43013,object,0.0,0.0,3.0,,,,,object
+precio_venta,True,True,entero,int=27584; $numberDouble=15429,float64,15429.0,35.87,2808.0,1000000.0,4250000000000.0,,,int64
+precio_arriendo,True,True,entero,$numberDouble=27184; int=15829,float64,27184.0,63.2,1846.0,100000.0,18000000000.0,,98.8% de faltantes en el alcance (> 50%),
+area,True,True,decimal,int=37426; float=5587,float64,0.0,0.0,4494.0,0.0,1900000.0,,,float64
+habitaciones,True,True,entero,int=43012; $numberDouble=1,float64,1.0,0.0,7.0,1.0,7.0,,,int64
+banos,True,True,entero,int=43012; $numberDouble=1,float64,1.0,0.0,7.0,0.0,6.0,,,int64
+administracion,True,True,entero,int=35088; $numberDouble=7925,float64,7925.0,18.42,4800.0,1.0,3500000000.0,,"decisión del equipo: está en N/A en todos los proyectos nuevos (sobre planos, en construcción, para estrenar), que de otro modo se perderían",
+parqueaderos,True,True,entero,int=43012; $numberDouble=1,float64,1.0,0.0,9.0,-2.0,30.0,,,int64
+sector,True,True,texto,str=41372; $numberDouble=1641,object,1641.0,3.82,103.0,,,,,object
+estrato,True,True,entero,int=43012; $numberDouble=1,float64,1.0,0.0,7.0,0.0,6.0,,,int64
+antiguedad,True,True,texto,str=43003; $numberDouble=10,object,10.0,0.02,8.0,,,el README dice 'en años'; los datos son rangos categóricos (p. ej. ENTRE 10 Y 20 ANOS),,object
+estado,True,True,texto,$numberDouble=796; str=42217,object,796.0,1.85,2.0,,,,"decisión del equipo: redundante con antiguedad (NUEVO = SOBRE PLANOS, EN CONSTRUCCION, PARA ESTRENAR; el resto es USADO) y habi.co no la reporta (796 filas en N/A)",
+longitud,True,True,decimal,float=43013,float64,0.0,0.0,11415.0,-74.21364518718856,-74.014,,,float64
+latitud,True,True,decimal,float=43013,float64,0.0,0.0,23274.0,4.4686294,4.8208222,,,float64
+descripcion,True,True,texto,str=43013,object,0.0,0.0,40499.0,,,,,object
+datetime,True,True,fecha,str=43011; $numberDouble=2,datetime64[ns],2.0,0.0,43011.0,2024-07-03 23:27:30.843000,2024-09-03 23:49:02.032000,,,datetime64[ns]
+jacuzzi,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+piscina,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+salon_comunal,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,1.0,0.0,0.0,constante (siempre False) en toda la base: no aporta información,,bool
+terraza,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+vigilancia,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+piso,True,True,entero,$numberDouble=43013,float64,43013.0,100.0,0.0,,,,100.0% de faltantes en el alcance (> 50%),
+closets,True,True,entero,$numberDouble=43013,float64,43013.0,100.0,0.0,,,,100.0% de faltantes en el alcance (> 50%),
+chimenea,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,1.0,0.0,0.0,constante (siempre False) en toda la base: no aporta información,,bool
+permite_mascotas,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,1.0,0.0,0.0,constante (siempre False) en toda la base: no aporta información,,bool
+gimnasio,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+ascensor,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+conjunto_cerrado,True,True,binario,int=43011; $numberDouble=2,float64,2.0,0.0,2.0,0.0,1.0,,,bool
+coords_modified,True,True,binario,bool=43013,float64,0.0,0.0,2.0,0.0,1.0,coordenadas ajustadas: tratar con cautela en variables geográficas,,bool
+localidad,True,True,texto,str=43013,object,0.0,0.0,19.0,,,,,object
+barrio,True,True,texto,str=42820; $numberDouble=193,object,193.0,0.45,1666.0,,,,,object
+estacion_tm_cercana,True,True,texto,str=43013,object,0.0,0.0,146.0,,,,,object
+distancia_estacion_tm_m,True,True,decimal,float=42602; int=411,float64,0.0,0.0,25713.0,4.94,7095.66,,,float64
+is_cerca_estacion_tm,True,True,binario,int=43013,float64,0.0,0.0,2.0,0.0,1.0,,,bool
+parque_cercano,True,True,texto,str=43013,object,0.0,0.0,176.0,,,,,object
+distancia_parque_m,True,True,decimal,float=42571; int=442,float64,0.0,0.0,24931.0,0.22,6276.51,,,float64
+is_cerca_parque,True,True,binario,int=43013,float64,0.0,0.0,2.0,0.0,1.0,,,bool
+centro_comercial_cercano,True,False,texto,,,,,,,,listada en el README pero no existe en el JSON,,
+distancia_centro_comercial_m,True,False,decimal,,,,,,,,listada en el README pero no existe en el JSON,,
+is_cerca_centro_comercial,True,False,binario,,,,,,,,listada en el README pero no existe en el JSON,,
+website,True,True,texto,str=43011; $numberDouble=2,object,2.0,0.0,2.0,,,,,object
+compañia,True,True,texto,$numberDouble=4530; str=38483,object,4530.0,10.53,880.0,,,,"decisión del equipo: es metadato del anuncio, no una característica de la vivienda; habi.co no la reporta (rompería la cobertura de esa fuente)",
+last_view,True,True,fecha,str=43011; $numberDouble=2,datetime64[ns],2.0,0.0,43011.0,2024-07-03 23:27:37.566000,2024-09-03 23:49:48.998000,se actualiza en cada corrida del scraper; no es fecha confiable de vigencia,,datetime64[ns]
+timeline,True,True,excluida,list=29427; $numberDouble=13586,,,,,,,lista anidada con el historial de precios; no cabe en un CSV plano,,
+url,True,True,texto,str=794; $numberDouble=42219,object,42219.0,98.15,794.0,,,,97.1% de faltantes en el alcance (> 50%),
+_id,False,True,excluida,$oid=43013,object,0.0,0.0,43013.0,,,,identificador interno de MongoDB; no está en el README (codigo identifica la vivienda),
+direccion,False,True,texto,str=794; $numberDouble=42219,object,42219.0,98.15,703.0,,,,97.1% de faltantes en el alcance (> 50%),

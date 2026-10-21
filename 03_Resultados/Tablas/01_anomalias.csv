@@ -1,0 +1,10 @@
+regla,n_filas,pct_filas
+area <= 0,0,0.0
+precio_venta <= 0,0,0.0
+banos == 0,0,0.0
+precio/m2 fuera de rango,0,0.0
+parqueaderos < 0,0,0.0
+estrato fuera de 1-6,0,0.0
+latitud fuera de Bogotá (aprox.),0,0.0
+longitud fuera de Bogotá (aprox.),0,0.0
+coords_modified == True,566,2.071

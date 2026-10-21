@@ -82,11 +82,14 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
   `README_columnas.md` (junto al JSON).
   - 43,013 registros: 27,270 `VENTA`, 15,515 `ARRIENDO`, 228 `VENTA Y ARRIENDO`;
     casi todos `APARTAMENTO`.
-  - **Formato MongoDB Extended JSON:** los numéricos vienen como texto
-    (`'339000000'`), los faltantes como `{'$numberDouble': 'NaN'}`, las fechas y
-    el id como `{'$date': ...}` / `{'$oid': ...}`, y `timeline` es una lista
-    anidada con el historial de precios. Hay que normalizar esto
-    explícitamente al cargar; no asuma tipos numéricos.
+  - **Formato MongoDB Extended JSON:** los faltantes vienen como
+    `{'$numberDouble': 'NaN'}`, el id como `{'$oid': ...}`, y `timeline` es una
+    lista anidada con el historial de precios. Los numéricos con valor vienen
+    como números (verificado al perfilar el JSON), pero el script de lectura
+    también acepta texto. Hay que normalizar esto explícitamente al cargar; no
+    asuma tipos numéricos.
+  - habi.co (794 de las ventas) no reporta `estado` ni `compañia`; `administracion`
+    está en N/A en todos los proyectos nuevos.
   - `antiguedad` es categórica por rangos (p. ej. `ENTRE 10 Y 20 ANOS`), no años.
   - `coords_modified == True` indica coordenadas ajustadas: tratarlas con
     cautela en cualquier variable geográfica.
@@ -113,7 +116,7 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
   versiones `Regressor` de los estimadores. XGBoost (`xgboost`) solo como
   comparación, igual que en clase.
 - **Un script por tarea**, numerado en orden de ejecución
-  (`02_Scripts/01_lectura_datos.py`, `02_limpieza_datos.py`, ...). Cada script
+  (`02_Scripts/01_limpieza_datos.py`, `02_...`). Cada script
   lee sus insumos de `01_Datos/` y escribe sus salidas en `01_Datos/` o
   `03_Resultados/`; no depende de variables en memoria de otro script.
 - Los scripts se corren desde la raíz del repo (`python 02_Scripts/01_x.py`) y
@@ -202,6 +205,14 @@ sigue.
 | ---------- | -------- | ------------- |
 | 2026-10-20 | Los datos crudos (incluido el JSON de ~81 MB) se versionan en git sin Git LFS. | Decisión del equipo; el archivo está por debajo del límite de 100 MB de GitHub. |
 | 2026-10-20 | Solo dos niveles de datos: `01_Crudos/` y `02_Limpios/` (sin `Procesados/` ni `Listos/`). | Decisión del equipo para simplificar el flujo de datos. |
+| 2026-10-20 | Base limpia solo con `VENTA` y `VENTA Y ARRIENDO` (`apartamentos_venta_limpio.csv`). | Son las que tienen `precio_venta`; `precio_arriendo` es un problema aparte. |
+| 2026-10-20 | Se excluyen `compañia`, `administracion` y `estado` de la base limpia. | `administracion` es N/A en todos los proyectos nuevos; `compañia` es metadato y habi.co no la reporta; `estado` es redundante con `antiguedad` (NUEVO = `SOBRE PLANOS`, `EN CONSTRUCCION`, `PARA ESTRENAR`) y habi.co tampoco la reporta. Conservarlas eliminaba las viviendas nuevas, las casas y toda la fuente habi.co. |
+| 2026-10-20 | También se excluyen `_id`, `timeline`, `direccion`, `url`, `precio_arriendo`, `piso` y `closets`. | `_id` y `timeline` no caben en un CSV plano; el resto tiene más de 50% de N/A dentro del alcance. |
+| 2026-10-20 | `sector` y `barrio` en N/A se codifican como la categoría `SIN_DATO`, sin eliminar la fila. | El N/A cae parejo entre localidades y estratos y `barrio` es la variable de ubicación más informativa; la categoría es constante, no se aprende de los datos. |
+| 2026-10-20 | `parqueaderos` negativo se toma como 0 (1 fila). | Decisión del equipo. |
+| 2026-10-20 | `banos == 0` se trata como faltante y se elimina la fila. | Son apartamentos de 40 a 481 m² y la descripción de 12 de las 14 menciona baños. |
+| 2026-10-20 | Filtro de precio por m² entre 1 y 40 millones de COP. | Fuera de ese rango hay errores de escala en precio o área. Umbral por plausibilidad, no por desempeño de un modelo; moverlo entre 31.6 y 50 millones cambia entre 3 y 9 filas. |
+| 2026-10-20 | `chimenea`, `permite_mascotas` y `salon_comunal` se dejan en la base pero se anotan como constantes. | Siempre `False`: no aportan información; descartarlas en el modelado. |
 
 ## Análisis descartados
 
@@ -209,6 +220,9 @@ sigue.
 
 | Fecha | Análisis/especificación descartada | Razón |
 | ----- | ---------------------------------- | ----- |
+| 2026-10-20 | Corregir los outliers de precio (×1000) y de área (decimal desplazado) en lugar de eliminarlos. | No se puede verificar el valor correcto: las descripciones no mencionan el precio y solo algunas dan los m². |
+| 2026-10-20 | Eliminar toda fila con algún N/A. | Deja 0 filas: `piso` y `closets` son 100% N/A y `precio_arriendo` es N/A en toda venta. |
+| 2026-10-20 | Estrato estrictamente menor a 6. | Eliminaba las 11,985 viviendas de estrato 6 del alcance (44%); el equipo eligió 1 a 6 inclusive. |
 
 ## Restricciones de muestra
 
@@ -216,6 +230,14 @@ sigue.
 
 | Criterio de exclusión | N antes | N después |
 | --------------------- | ------- | --------- |
+| `tipo_operacion` en `VENTA` o `VENTA Y ARRIENDO` | 43,013 | 27,498 |
+| N/A en `estrato`, `antiguedad` o `website` | 27,498 | 27,485 |
+| `area > 0` | 27,485 | 27,466 |
+| `1 <= estrato <= 6` | 27,466 | 27,459 |
+| `banos >= 1` | 27,459 | 27,445 |
+| Precio por m² entre 1 y 40 millones de COP | 27,445 | 27,324 |
+
+Fuente: `03_Resultados/Tablas/01_perdida_observaciones.csv`.
 
 ## Reglas estrictas
 

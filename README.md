@@ -42,12 +42,21 @@ ahorro, con revisión trimestral sobre datos nuevos.
 - **Datos externos** (en `01_Datos/01_Crudos/external/`): barrios y localidades,
   estaciones troncales de TransMilenio, paraderos del SITP, centros comerciales
   y escenarios deportivos.
+- **Base limpia:** `01_Datos/02_Limpios/apartamentos_venta_limpio.csv`, solo con
+  ventas (`VENTA` y `VENTA Y ARRIENDO`), sin N/A y con los tipos del diccionario
+  de columnas. Las columnas y observaciones que se descartaron, y por qué, están
+  en `CLAUDE.md` y en
+  [03_Resultados/Tablas/01_perdida_observaciones.csv](03_Resultados/Tablas/01_perdida_observaciones.csv).
 
 Cuidados al usar la base:
 
-- Está en formato MongoDB Extended JSON: los numéricos vienen como texto, los
-  faltantes como `{'$numberDouble': 'NaN'}` y las fechas e ids como objetos
-  `$date` / `$oid`. Hay que normalizarlo al cargar.
+- Está en formato MongoDB Extended JSON: los faltantes vienen como
+  `{'$numberDouble': 'NaN'}` y los ids como `$oid`. Hay que normalizarlo al
+  cargar (lo hace `02_Scripts/01_limpieza_datos.py`).
+- El diccionario de columnas lista 3 columnas de centro comercial que no
+  existen en el JSON.
+- habi.co no reporta `estado` ni `compañia`, y `administracion` no existe en los
+  proyectos nuevos. Por eso esas columnas no están en la base limpia.
 - `antiguedad` es categórica por rangos, no años.
 - `coords_modified == True` marca coordenadas ajustadas; usarlas con cautela.
 - `last_view` no es una fecha confiable de vigencia del anuncio.
@@ -74,8 +83,14 @@ El flujo de datos va en un solo sentido: Crudos → Limpios.
 
 ## Cómo reproducir
 
-> Pendiente: aún no hay scripts, `00_main.py` ni `requirements.txt`. Esta
-> sección se completa cuando existan.
+Scripts, en orden de ejecución (desde la raíz del repositorio):
+
+1. `python3 02_Scripts/01_limpieza_datos.py`: lee el JSON crudo, normaliza el
+   formato, hace el reconocimiento y la limpieza, y escribe la base limpia en
+   `01_Datos/02_Limpios/` y las tablas `01_*.csv` en `03_Resultados/Tablas/`.
+
+> Pendiente: aún no hay `00_main.py` ni `requirements.txt`. El script necesita
+> `pandas` y `numpy`; se probó con Python 3.9 y pandas 2.2.0.
 
 Convenciones del proyecto:
 
@@ -83,7 +98,7 @@ Convenciones del proyecto:
 - Cada tarea es un script numerado en `02_Scripts/` que lee de `01_Datos/` y
   escribe en `01_Datos/` o `03_Resultados/`.
 - Los scripts se corren desde la raíz del repositorio
-  (`python 02_Scripts/01_lectura_datos.py`) y usan rutas relativas.
+  (`python3 02_Scripts/01_limpieza_datos.py`) y usan rutas relativas.
 - `python 00_main.py` debe reproducir todo el pipeline en una sesión limpia.
 - Ningún número de tablas o presentaciones se escribe a mano: todo sale de una
   corrida.

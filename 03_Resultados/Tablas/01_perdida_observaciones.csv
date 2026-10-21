@@ -1,0 +1,26 @@
+paso,n_antes,n_despues,n_perdidas,n_faltantes_columna
+Registros leídos del JSON,43013,43013,0,
+"Alcance: tipo_operacion en ['VENTA', 'VENTA Y ARRIENDO']",43013,27498,15515,
+N/A en sector -> 'SIN_DATO',27498,27498,0,771
+N/A en barrio -> 'SIN_DATO',27498,27498,0,143
+N/A en estrato,27498,27497,1,1
+N/A en antiguedad,27497,27487,10,10
+N/A en website,27487,27485,2,2
+N/A en last_view,27485,27485,0,2
+N/A en datetime,27485,27485,0,2
+N/A en jacuzzi,27485,27485,0,2
+N/A en chimenea,27485,27485,0,2
+N/A en permite_mascotas,27485,27485,0,2
+N/A en gimnasio,27485,27485,0,2
+N/A en ascensor,27485,27485,0,2
+N/A en conjunto_cerrado,27485,27485,0,2
+N/A en piscina,27485,27485,0,2
+N/A en salon_comunal,27485,27485,0,2
+N/A en terraza,27485,27485,0,2
+N/A en vigilancia,27485,27485,0,2
+Corrección: parqueaderos < 0 -> 0,27485,27485,0,1
+Filtro: area > 0,27485,27466,19,
+Filtro: 1 <= estrato <= 6,27466,27459,7,
+Filtro: banos >= 1 (banos == 0 como faltante),27459,27445,14,
+"Filtro: 1,000,000 <= precio/m2 <= 40,000,000",27445,27324,121,
+"Total tras alcance, N/A y filtros",43013,27324,15689,
