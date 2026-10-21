@@ -31,7 +31,7 @@ Pasos:
     3. Estima cada modelo solo con entrenamiento. Los hiperparámetros se eligen
        con validación cruzada (KFold de 5, random_state=2026) por RMSE en pesos.
     4. Evalúa una sola vez en prueba: RMSE y MAPE en entrenamiento, CV y prueba,
-       brecha entrenamiento-prueba y cambio frente a la línea base.
+       diferencia entre CV y prueba y cambio frente a la línea base.
     5. Desagrega los errores de prueba por estrato y localidad, e interpreta
        (coeficientes lineales e importancia de variables de los árboles).
 
@@ -70,8 +70,6 @@ SEMILLA = 2026
 N_FOLDS = 5
 OBJETIVO = "precio_venta"
 ESCALAS = ["log", "niveles"]
-# Regla práctica de las diapositivas: brecha entrenamiento-prueba mayor a esto sugiere sobreajuste
-UMBRAL_BRECHA_PCT = 10
 # Grupos con menos viviendas que esto en prueba se marcan: sus métricas son poco estables
 N_MINIMO_GRUPO_PRUEBA = 30
 
@@ -373,8 +371,10 @@ for escala in ESCALAS:
             "segundos_estimacion": segundos[(nombre, escala)],
         })
 metricas = pd.DataFrame(filas)
-metricas["brecha_train_prueba_pct"] = 100 * (metricas["rmse_prueba"] - metricas["rmse_train"]) / metricas["rmse_train"]
-metricas[f"brecha_supera_{UMBRAL_BRECHA_PCT}pct"] = metricas["brecha_train_prueba_pct"].abs() > UMBRAL_BRECHA_PCT
+# Consistencia fuera de muestra: prueba frente a CV (ambos sobre datos no usados para ajustar).
+# No hay umbral: la regla de las diapositivas es para clasificación, no para RMSE/MAPE.
+metricas["dif_rmse_prueba_vs_cv_pct"] = 100 * (metricas["rmse_prueba"] - metricas["rmse_cv"]) / metricas["rmse_cv"]
+metricas["dif_mape_prueba_vs_cv_pp"] = metricas["mape_prueba"] - metricas["mape_cv"]
 base = metricas[metricas["modelo"] == "lineal_base"].set_index("escala")
 metricas["cambio_rmse_prueba_vs_base_pct"] = 100 * (
     metricas["rmse_prueba"] / metricas["escala"].map(base["rmse_prueba"]) - 1)
@@ -382,12 +382,13 @@ metricas["cambio_mape_prueba_vs_base_pp"] = metricas["mape_prueba"] - metricas["
 assert predicciones.notna().all().all(), "Hay N/A en las predicciones de prueba"
 
 vista = metricas[["modelo", "escala", "rmse_train", "rmse_cv", "rmse_prueba", "mape_train", "mape_cv",
-                  "mape_prueba", "brecha_train_prueba_pct", "cambio_rmse_prueba_vs_base_pct"]].copy()
+                  "mape_prueba", "dif_rmse_prueba_vs_cv_pct", "dif_mape_prueba_vs_cv_pp",
+                  "cambio_rmse_prueba_vs_base_pct"]].copy()
 for c in ["rmse_train", "rmse_cv", "rmse_prueba"]:
     vista[c] = (vista[c] / 1e6).round(1)
 vista = vista.rename(columns={c: c + "_M" for c in ["rmse_train", "rmse_cv", "rmse_prueba"]})
 with pd.option_context("display.width", 200, "display.max_columns", None):
-    print("RMSE en millones de COP; MAPE en %; brecha y cambio en %")
+    print("RMSE en millones de COP; MAPE en %; dif. prueba vs CV y cambio vs base en % (MAPE: puntos)")
     print(vista.round(2).to_string(index=False))
 
 # ---------------------------------------------------------------------------

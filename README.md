@@ -23,8 +23,8 @@ es el precio de venta publicado (`precio_venta`). El precio de arriendo
 | Validación | Conjunto de prueba separado al inicio; hiperparámetros con validación cruzada solo sobre entrenamiento |
 | Semilla | `random_state=2026` en toda partición, validación y modelo aleatorio |
 
-Todo modelo se reporta junto a la línea base, en entrenamiento y en prueba. Los
-errores se desagregan por estrato y localidad.
+Todo modelo se reporta junto a la línea base, en entrenamiento, validación
+cruzada y prueba. Los errores se desagregan por estrato y localidad.
 
 **Evaluación de impacto (propuesta):** prueba A/B entre usuarios del modelo
 lineal y del Random Forest, comparando tiempo de compra/venta y ganancia o
@@ -76,14 +76,14 @@ Cuidados al usar la base:
 05_Notas/           notas e ideas preliminares
 06_Bitacoras/       documentación de cada sesión de trabajo
 07_Recursos/        artículos, enunciados y documentación externa
-00_main.py          corre el pipeline completo en orden (pendiente)
+00_main.py          corre el pipeline completo en orden
 ```
 
 El flujo de datos va en un solo sentido: Crudos → Limpios.
 
 ## Cómo reproducir
 
-Entorno (probado con Python 3.12):
+Entorno (probado con Python 3.13):
 
 ```
 python -m venv .venv
@@ -99,8 +99,15 @@ Scripts, en orden de ejecución (desde la raíz del repositorio):
 2. `python 02_Scripts/02_analisis_descriptivo.py`: describe la base limpia
    (sin filtrarla) y escribe las tablas `02_*.csv` en `03_Resultados/Tablas/`
    y las figuras `02_*.png` en `03_Resultados/Figuras/`.
+3. `python 02_Scripts/03_particion_muestra.py`: separa el conjunto de prueba
+   (80/20 estratificado por estrato) y escribe la partición en
+   `01_Datos/02_Limpios/` y la tabla `03_*.csv`.
+4. `python 02_Scripts/04_estimacion_modelos.py`: estima la línea base, Lasso,
+   Random Forest y XGBoost (objetivo en log y en niveles), y escribe las tablas
+   `04_*.csv` y las figuras `04_*.png`. Tarda varios minutos.
 
-> Pendiente: aún no hay `00_main.py` que encadene los scripts.
+`python 00_main.py` corre estos scripts en orden. Si se usa el entorno virtual:
+`.venv/bin/python 00_main.py`.
 
 Convenciones del proyecto:
 

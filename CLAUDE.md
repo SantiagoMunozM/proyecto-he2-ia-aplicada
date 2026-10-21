@@ -152,8 +152,12 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
   (dummies, escalamiento) en todo el entrenamiento. Las que sí lo usan
   (p. ej. un precio promedio por barrio) deben calcularse dentro de cada fold.
 - Reporte RMSE y MAPE de cada modelo junto a la línea base lineal, en
-  entrenamiento y prueba (las diapositivas usan como regla práctica una
-  diferencia < 10% entre ambos para diagnosticar sobreajuste).
+  entrenamiento, validación cruzada y prueba. No se usa un umbral de
+  diferencia porcentual entre entrenamiento y prueba para diagnosticar
+  sobreajuste: la regla de las diapositivas (< 10%) es para predicciones
+  binarias, no para RMSE/MAPE. Se compara el error fuera de muestra (CV
+  frente a prueba) y se reporta el de entrenamiento solo como dato
+  descriptivo.
 - Si se usa la dimensión temporal (`datetime`, `timeline`), considere un split
   temporal en vez de uno aleatorio.
 - Desagregue los errores por estrato y localidad para la sección de IA
