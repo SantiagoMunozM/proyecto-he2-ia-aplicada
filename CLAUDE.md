@@ -111,17 +111,23 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
 
 - Lenguaje: Python. `pandas` para datos; `scikit-learn` para todos los métodos
   de machine learning, siguiendo lo visto en las diapositivas del curso
-  (`train_test_split`, `KFold`/`cross_val_score`, `DecisionTree*`,
-  `RandomForest*`, `LinearRegression`, `Pipeline`). Para regresión use las
-  versiones `Regressor` de los estimadores. XGBoost (`xgboost`) solo como
-  comparación, igual que en clase.
+  (`train_test_split`, `KFold`/`cross_val_score`, `StandardScaler`,
+  `LinearRegression`, `Lasso`/`Ridge`, `DecisionTree*`, `RandomForest*`).
+  Para regresión use las versiones `Regressor` de los estimadores. XGBoost
+  (`xgboost`) solo como comparación, igual que en clase.
+- Use solo herramientas vistas en el curso y escriba los pasos de forma
+  explícita (p. ej. `pd.get_dummies`, `fit`/`transform` a mano, un ciclo sobre
+  `KFold`). No use `Pipeline`, `ColumnTransformer`, `TransformedTargetRegressor`
+  ni `GridSearchCV`. Si hace falta una herramienta que no se vio en clase,
+  explique para qué sirve y consulte antes de usarla.
 - **Un script por tarea**, numerado en orden de ejecución
   (`02_Scripts/01_limpieza_datos.py`, `02_...`). Cada script
   lee sus insumos de `01_Datos/` y escribe sus salidas en `01_Datos/` o
   `03_Resultados/`; no depende de variables en memoria de otro script.
 - Los scripts se corren desde la raíz del repo (`python 02_Scripts/01_x.py`) y
   `python 00_main.py` debe reproducir todo el pipeline en una sesión limpia, sin
-  intervención manual.
+  intervención manual. El intérprete es el de `.venv/` (créelo con
+  `python3.13 -m venv .venv && .venv/bin/pip install -r requirements.txt`).
 - Utilice rutas relativas ancladas a la raíz del proyecto (`01_Datos/...`).
   Nunca rutas absolutas del computador.
 - Explique lo que va a hacer ANTES de editar o crear archivos.
@@ -138,8 +144,13 @@ del proyecto se lleva en `HANDOFF.md`, no aquí.
   de modelo se hacen con validación cruzada solo sobre entrenamiento.
 - Toda transformación aprendida de los datos (imputación, escalamiento,
   codificación, agregados por barrio/localidad) se ajusta solo con
-  entrenamiento, idealmente dentro de un `Pipeline`, para evitar fuga de
-  información.
+  entrenamiento y se aplica a prueba sin reajustarla, para evitar fuga de
+  información: las columnas de dummies se definen en entrenamiento y la
+  prueba se alinea a ellas, y el escalador se ajusta (`fit`) en
+  entrenamiento y solo transforma la prueba. Para la validación cruzada
+  basta con ajustar así las transformaciones que no usan el precio
+  (dummies, escalamiento) en todo el entrenamiento. Las que sí lo usan
+  (p. ej. un precio promedio por barrio) deben calcularse dentro de cada fold.
 - Reporte RMSE y MAPE de cada modelo junto a la línea base lineal, en
   entrenamiento y prueba (las diapositivas usan como regla práctica una
   diferencia < 10% entre ambos para diagnosticar sobreajuste).
@@ -213,6 +224,13 @@ sigue.
 | 2026-10-20 | `banos == 0` se trata como faltante y se elimina la fila. | Son apartamentos de 40 a 481 m² y la descripción de 12 de las 14 menciona baños. |
 | 2026-10-20 | Filtro de precio por m² entre 1 y 40 millones de COP. | Fuera de ese rango hay errores de escala en precio o área. Umbral por plausibilidad, no por desempeño de un modelo; moverlo entre 31.6 y 50 millones cambia entre 3 y 9 filas. |
 | 2026-10-20 | `chimenea`, `permite_mascotas` y `salon_comunal` se dejan en la base pero se anotan como constantes. | Siempre `False`: no aportan información; descartarlas en el modelado. |
+| 2026-10-20 | Entorno: `.venv` con python3.13 (Homebrew) y `requirements.txt` con versiones fijas; los scripts se corren con `.venv/bin/python`. | Ningún Python de la máquina tenía `scikit-learn` ni `xgboost`; el entorno fijo hace la corrida reproducible para el equipo. |
+| 2026-10-20 | Partición única 80/20 estratificada por estrato (`random_state=2026`), guardada en `01_Datos/02_Limpios/particion_train_test.csv` por `03_particion_muestra.py`. | `datetime` cubre solo jul–sep de 2024 (no da para split temporal); estrato 1 tiene 80 viviendas y debe estar en prueba. Todo modelo, incluido el de texto, usa el mismo conjunto de prueba. |
+| 2026-10-20 | Cada modelo se estima con el objetivo en log(precio) y en niveles; las métricas siempre en COP. | Decisión del equipo: comparar ambas escalas en lugar de elegir una a priori. |
+| 2026-10-20 | En los lineales con objetivo en log, el área entra como log(area) (log-log); en niveles, en niveles. | Con el área en niveles, exp(b·area) explota para viviendas de más de 1,000 m² (predicciones de billones de COP). Los árboles no cambian con transformaciones monótonas. |
+| 2026-10-20 | La estimación no usa `Pipeline`, `ColumnTransformer`, `TransformedTargetRegressor` ni `GridSearchCV`: dummies con `pd.get_dummies` definidas en entrenamiento (prueba alineada a esas columnas), log del objetivo a mano, CV con un ciclo explícito sobre `KFold` y RMSE en pesos, importancia con `feature_importances_` (dummies sumadas por variable). | No se ven en el curso. El escalador de Lasso (todas las columnas, incluidas las dummies) se ajusta con todo el entrenamiento: la fuga entre folds de la CV es mínima (solo media y desviación de las X, nunca el precio) y la prueba no se toca. |
+| 2026-10-20 | `barrio` no entra como variable; la ubicación fina se toma de latitud y longitud (más localidad y distancias). | 1,387 categorías: el one-hot es muy disperso y el target encoding arriesga fuga. `barrio` se conserva para desagregar errores. |
+| 2026-10-20 | Línea base: lineal con `area`, `habitaciones`, `estrato`, `antiguedad` y `localidad`. Conjunto completo (Lasso, RF, XGB): base + baños, parqueaderos, tipo de propiedad, lat/lon, distancias, amenidades. | Excluidas del modelado, con razón en `04_estimacion_modelos.py`: `website`, `sector`, `tipo_operacion`, fechas, nombres de estación y parque, `coords_modified`, `descripcion` (reservada para modelo de texto) y las constantes. |
 
 ## Análisis descartados
 
