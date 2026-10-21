@@ -83,14 +83,24 @@ El flujo de datos va en un solo sentido: Crudos → Limpios.
 
 ## Cómo reproducir
 
+Entorno (probado con Python 3.12):
+
+```
+python -m venv .venv
+.venv/Scripts/activate   # En Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 Scripts, en orden de ejecución (desde la raíz del repositorio):
 
-1. `python3 02_Scripts/01_limpieza_datos.py`: lee el JSON crudo, normaliza el
+1. `python 02_Scripts/01_limpieza_datos.py`: lee el JSON crudo, normaliza el
    formato, hace el reconocimiento y la limpieza, y escribe la base limpia en
    `01_Datos/02_Limpios/` y las tablas `01_*.csv` en `03_Resultados/Tablas/`.
+2. `python 02_Scripts/02_analisis_descriptivo.py`: describe la base limpia
+   (sin filtrarla) y escribe las tablas `02_*.csv` en `03_Resultados/Tablas/`
+   y las figuras `02_*.png` en `03_Resultados/Figuras/`.
 
-> Pendiente: aún no hay `00_main.py` ni `requirements.txt`. El script necesita
-> `pandas` y `numpy`; se probó con Python 3.9 y pandas 2.2.0.
+> Pendiente: aún no hay `00_main.py` que encadene los scripts.
 
 Convenciones del proyecto:
 
@@ -106,7 +116,10 @@ Convenciones del proyecto:
 ## IA responsable
 
 La localidad, el barrio y el estrato son variables sensibles y están muy
-correlacionadas entre sí. Existe el riesgo de que el modelo perpetúe
+correlacionadas entre sí (coeficiente de Cramér's V entre 0.47 y 0.999 según
+el par, ver
+[03_Resultados/Tablas/02_asociacion_variables_sensibles.csv](03_Resultados/Tablas/02_asociacion_variables_sensibles.csv)).
+Existe el riesgo de que el modelo perpetúe
 desigualdades históricas de inversión urbana, y los más afectados por una
 sub o sobrevaloración serían los hogares de estratos bajos y de zonas
 periféricas (créditos hipotecarios, subsidios). Por eso el análisis de errores
