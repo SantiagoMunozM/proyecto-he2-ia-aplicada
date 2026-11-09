@@ -19,6 +19,7 @@ es el precio de venta publicado (`precio_venta`). El precio de arriendo
 | Línea base | Regresión lineal con área, antigüedad, ubicación, estrato y habitaciones |
 | Modelo propuesto | Random Forest (`RandomForestRegressor`), comparado contra la línea base |
 | Comparación adicional | XGBoost, solo como referencia |
+| Modelos con texto | La `descripcion` del anuncio (con las cifras de dinero, teléfonos y correos enmascarados) entra como variables por palabras clave, TF-IDF o vectores de un Transformer preentrenado (`intfloat/multilingual-e5-base`), en Random Forest, Ridge y una red MLP en PyTorch; cada variante se compara con su pareja sin texto |
 | Métricas | RMSE (principal) y MAPE (secundaria) |
 | Validación | Conjunto de prueba separado al inicio; hiperparámetros con validación cruzada (`cross_validate`, y `GridSearchCV` para el objetivo en niveles) solo sobre entrenamiento |
 | Semilla | `random_state=2026` en toda partición, validación y modelo aleatorio |
@@ -47,6 +48,11 @@ ahorro, con revisión trimestral sobre datos nuevos.
   los tipos del diccionario de columnas. Las columnas y observaciones que se descartaron, y por qué, están
   en `CLAUDE.md` y en
   [03_Resultados/Tablas/01_perdida_observaciones.csv](03_Resultados/Tablas/01_perdida_observaciones.csv).
+- **Texto de la descripción:** `01_Datos/02_Limpios/descripcion_limpia.csv` (texto
+  enmascarado y variables por palabras clave) y
+  `01_Datos/02_Limpios/embeddings_e5_base.npz` (vectores del Transformer, calculados una
+  vez). El control del enmascaramiento está en
+  [09_enmascaramiento.csv](03_Resultados/Tablas/09_enmascaramiento.csv).
 
 Cuidados al usar la base:
 
@@ -121,6 +127,22 @@ Scripts, en orden de ejecución (desde la raíz del repositorio):
    presentación de avance con la paleta de las diapositivas (`06_*.png`).
 7. `python 02_Scripts/07_perfil_descripcion.py`: describe el texto de
    `descripcion` (largo y temas mencionados) y escribe las tablas `07_*.csv`.
+8. `python 02_Scripts/08_objetivos_practicos.py`: traduce el error de prueba del
+   modelo principal a cifras por estrato (error típico en pesos y en porcentaje) y un
+   ejemplo de vivienda. Tablas `08_*.csv`.
+9. `python 02_Scripts/09_texto_limpieza.py`: enmascara en `descripcion` las cifras de
+   dinero, teléfonos y correos, y crea las variables por palabras clave
+   (`descripcion_limpia.csv` y tablas `09_*.csv`).
+10. `python 02_Scripts/10_texto_embeddings.py`: calcula los vectores de la descripción
+    con `intfloat/multilingual-e5-base`. Descarga el modelo la primera vez y tarda unos
+    15 minutos; si el archivo de vectores ya coincide con la base, no lo recalcula.
+11. `python 02_Scripts/11_modelos_texto.py`: estima las variantes con texto y sus
+    parejas sin texto (Random Forest, Ridge y MLP en PyTorch), en log y en niveles, y
+    escribe las tablas `11_*.csv`. Tarda alrededor de media hora.
+12. `python 02_Scripts/13_comparacion_final.py`: reúne todos los modelos contra la línea
+    base, resume los sesgos por estrato y localidad y escribe las tablas `13_*.csv` y las
+    figuras `13_*.png`. El número 12 está reservado para la extracción de atributos con un
+    LLM, que no existe todavía.
 
 `python 00_main.py` corre estos scripts en orden. Si se usa el entorno virtual:
 `.venv/bin/python 00_main.py`.
@@ -149,7 +171,12 @@ periféricas (créditos hipotecarios, subsidios). Por eso el análisis de errore
 se desagrega por estrato y localidad (tablas `05_errores_por_*.csv` y
 `05_costo_esperado_por_estrato.csv` en `03_Resultados/Tablas/`, con los grupos de
 menos de 30 viviendas en prueba marcados), y el proyecto incluye una sección de
-riesgos éticos, sesgos y estrategias de mitigación.
+riesgos éticos, sesgos y estrategias de mitigación. Para todos los modelos, incluidos
+los de texto, las brechas de error entre estratos y localidades y una variante sin
+estrato ni localidad están en
+[13_resumen_sesgos.csv](03_Resultados/Tablas/13_resumen_sesgos.csv). Las variables
+por palabras clave describen solo la vivienda: no se crean variables de barrio,
+estrato ni negociación a partir del texto.
 
 ## Uso de IA generativa
 

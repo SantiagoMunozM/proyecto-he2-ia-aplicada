@@ -1,0 +1,13 @@
+medida,valor
+modelo,intfloat/multilingual-e5-base
+revision,d128750597153bb5987e10b1c3493a34e5a4502a
+prefijo,query:
+dimensiones,768
+viviendas,26900
+tokens_maximo_modelo,512
+tokens_mediana,121.0
+tokens_percentil_99,244.0
+tokens_maximo,382
+descripciones_truncadas,0
+dispositivo,mps
+minutos_calculo,13.6

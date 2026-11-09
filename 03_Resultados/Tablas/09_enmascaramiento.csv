@@ -1,0 +1,7 @@
+medida,viviendas,n,reemplazos,pct
+descripciones con correo enmascarado,26900,4,6.0,0.01
+descripciones con telefono enmascarado,26900,546,566.0,2.03
+descripciones con dinero enmascarado,26900,1956,3143.0,7.27
+descripciones modificadas (alguna regla),26900,2471,,9.19
+"descripciones con el precio publicado, antes de enmascarar",26900,1057,,3.93
+"descripciones con el precio publicado, después de enmascarar",26900,0,,0.0

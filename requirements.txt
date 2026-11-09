@@ -7,3 +7,8 @@ scipy==1.18.1
 scikit-learn==1.9.1
 xgboost==3.4.1
 matplotlib==3.11.2
+# Modelos de texto (10_texto_embeddings.py y 11_modelos_texto.py)
+torch==2.15.0
+sentence-transformers==6.2.0
+transformers==5.22.2
+tokenizers==0.23.3

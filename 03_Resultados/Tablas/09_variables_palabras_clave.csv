@@ -1,0 +1,18 @@
+variable,patron,pct_viviendas
+txt_vista,(?<!sin )(?<!no tiene )(?<!no hay )\bvista\b(?! interior),36.9
+txt_exterior,\bexterior\b,30.1
+txt_interior,vista interior|\b(?:apartamento|apto|piso \w+) interior\b,7.0
+txt_balcon,(?<!sin )(?<!no tiene )(?<!no hay )\bbalcon,30.1
+txt_remodelado,\bremodelad[oa]s?\b|\bremodelacion (?:total|completa|reciente),14.8
+txt_para_remodelar,(?:para|por|a|requiere|necesita) remodela(?:r|cion)|remodelar a (?:su )?gusto,1.9
+txt_iluminado,\biluminad[oa]\b|iluminacion|luz natural|luminos[oa],33.2
+txt_duplex,\bduplex\b,8.9
+txt_penthouse,\bpent ?-?house\b,4.0
+txt_estudio,(?<!sin )(?<!no tiene )(?<!no hay )(?<!aparta )\bestudio\b,39.0
+txt_deposito,(?<!sin )(?<!no tiene )(?<!no hay )\bdeposito,44.1
+txt_cuarto_servicio,(?:cuarto|alcoba|habitacion)(?: y bano)? de servicio|\bcbs\b,22.1
+txt_chimenea,(?<!sin )(?<!no tiene )(?<!no hay )\bchimenea,25.2
+txt_esquinero,\besquiner[oa]\b,3.9
+txt_piso_alto,\bpiso alto\b|\bultimo piso\b,2.7
+txt_piso_numero,"\bpiso\s*(?:n[o°º.]?\s*)?(\d{1,2})[a-z°º]{0,3}\b(?!\s*(?:m\b|m2|mt|me|ne|anos)) | \b(\d{1,2})[a-z°º.]{0,4}\s+piso\b(?!s) | \b(primer|primero|segundo|tercer|tercero|cuarto|quinto|sexto|septimo|octavo|noveno|decimo)\s+piso\b(?!s) | \bpiso\s+(primer|primero|segundo|tercer|tercero|cuarto|quinto|sexto|septimo|octavo|noveno|decimo)\b",41.1
+txt_menciona_piso,txt_piso_numero > 0,41.1
