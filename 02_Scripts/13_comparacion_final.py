@@ -24,6 +24,8 @@ Salidas:
     03_Resultados/Figuras/13_rmse_todas_variantes.png
     03_Resultados/Figuras/13_mape_estrato_texto.png
     03_Resultados/Figuras/13_sesgo_estrato_texto.png
+    03_Resultados/Figuras/13_cambio_texto_vs_pareja.png
+    03_Resultados/Figuras/13_ablacion_estrato_localidad.png
 
 Criterio de selección: el menor RMSE de CV (solo entrenamiento). El de prueba se reporta, no
 se usa para elegir. Los grupos con menos de 30 viviendas en prueba (columna
@@ -321,6 +323,66 @@ def lineas_estrato(nombre_figura, columna, ylabel, cero=False):
 lineas_estrato("13_mape_estrato_texto.png", "mape", "MAPE en prueba (%)")
 lineas_estrato("13_sesgo_estrato_texto.png", "error_relativo_medio_pct",
                "Error relativo medio con signo (%)\n+ sobrevalorada · − subvalorada", cero=True)
+
+
+def etiqueta_barra(ax, x, y, texto, margen):
+    """Valor escrito al final de la barra, hacia afuera según el signo."""
+    ax.text(x + (margen if x >= 0 else -margen), y, texto, va="center",
+            ha="left" if x >= 0 else "right", fontsize=12, color=TINTA)
+
+
+# 4.4 Cambio del RMSE de CV al agregar el texto, frente a la pareja sin texto
+con_texto = metricas[metricas["usa_texto"]].copy()
+con_texto["etiqueta"] = con_texto["nombre"] + "\nvs. " + con_texto["sin_texto"].map(NOMBRES)
+# Mismo orden en los dos paneles: promedio del cambio entre escalas, el mayor aumento arriba
+orden = con_texto.groupby("etiqueta")["cambio_rmse_cv_vs_sin_texto_pct"].mean().sort_values().index
+limite = 1.4 * con_texto["cambio_rmse_cv_vs_sin_texto_pct"].abs().max()
+fig, axes = plt.subplots(1, 2, figsize=(16, 8), sharey=True, sharex=True)
+for ax, escala in zip(axes, ESCALAS):
+    sub = con_texto[con_texto["escala"] == escala].set_index("etiqueta").loc[orden]
+    y = np.arange(len(sub))
+    ax.barh(y, sub["cambio_rmse_cv_vs_sin_texto_pct"], height=0.6, color=AZUL)
+    for yi, valor in zip(y, sub["cambio_rmse_cv_vs_sin_texto_pct"]):
+        etiqueta_barra(ax, valor, yi, f"{valor:+.1f}%", 0.02 * limite)
+    ax.axvline(0, color=TINTA_SECUNDARIA, linewidth=1)
+    ax.set_yticks(y, sub.index, fontsize=12)
+    ax.set_xlim(-limite, limite)
+    ax.set_title(TITULO_ESCALA[escala], loc="left", fontsize=16, color=TINTA)
+    ax.set_xlabel("Cambio del RMSE de CV frente a la pareja sin texto (%)")
+    estilo_ejes(ax)
+fig.text(0.0, -0.02, "Negativo: el RMSE de CV baja al agregar el texto. Cada variante se compara con el mismo "
+         "estimador sin el bloque de texto (misma grilla y misma CV de 5 folds).", fontsize=12,
+         color=TINTA_SECUNDARIA)
+fig.tight_layout()
+guardar(fig, "13_cambio_texto_vs_pareja.png")
+
+# 4.5 Ablación sin estrato ni localidad: MAPE de prueba y brecha de MAPE entre estratos
+ABLACION = ["random_forest"] + SIN_ESTRATO_LOCALIDAD
+MEDIDAS = [("mape_prueba", "MAPE de prueba (%)"),
+           ("brecha_mape_estrato_pp", "Brecha de MAPE entre estratos (pp)")]
+COLOR_ESCALA = {"log": AZUL, "niveles": NARANJA}
+excluidos = ", ".join(str(e) for e in ESTRATOS if PEQUENO[e])
+fig, axes = plt.subplots(1, 2, figsize=(16, 5.8), sharey=True)
+y = np.arange(len(ABLACION))[::-1]  # el RF tabular arriba
+for ax, (columna, etiqueta) in zip(axes, MEDIDAS):
+    tope = sesgos.loc[sesgos["modelo"].isin(ABLACION), columna].max()
+    for desplazamiento, escala in zip([0.19, -0.19], ESCALAS):
+        sub = sesgos[sesgos["escala"] == escala].set_index("modelo").loc[ABLACION]
+        ax.barh(y + desplazamiento, sub[columna], height=0.36, color=COLOR_ESCALA[escala],
+                label=TITULO_ESCALA[escala])
+        for yi, valor in zip(y + desplazamiento, sub[columna]):
+            etiqueta_barra(ax, valor, yi, f"{valor:.1f}", 0.015 * tope)
+    ax.set_yticks(y, [NOMBRES[m] for m in ABLACION], fontsize=13)
+    ax.set_xlim(0, 1.15 * tope)
+    ax.set_title(etiqueta, loc="left", fontsize=16, color=TINTA)
+    estilo_ejes(ax)
+handles, textos = axes[0].get_legend_handles_labels()
+fig.legend(handles, textos, loc="upper right", ncol=2, fontsize=13, bbox_to_anchor=(1, 1.0))
+fig.text(0.0, -0.04, "Brecha: MAPE máximo menos mínimo entre estratos, sin los que tienen menos de 30 viviendas "
+         f"en prueba (estrato {excluidos}).\nLas versiones sin estrato ni localidad conservan latitud, longitud "
+         "y distancias.", fontsize=12, color=TINTA_SECUNDARIA)
+fig.tight_layout(rect=[0, 0, 1, 0.9])
+guardar(fig, "13_ablacion_estrato_localidad.png")
 
 # ---------------------------------------------------------------------------
 # 5. Guardado de tablas
